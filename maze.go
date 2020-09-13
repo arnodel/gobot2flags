@@ -79,12 +79,26 @@ func NewMaze(width, height int) *Maze {
 	}
 }
 
+func (m *Maze) cellIndex(x, y int) int {
+	if x < 0 {
+		x = x%m.width + m.width
+	} else if x >= m.width {
+		x = x % m.width
+	}
+	if y < 0 {
+		y = y%m.height + m.height
+	} else if y >= m.height {
+		y = y % m.height
+	}
+	return x + y*m.width
+}
+
 func (m *Maze) UpdateCellAt(x, y int, c Cell) {
-	m.cells[x+y*m.width] |= c
+	m.cells[m.cellIndex(x, y)] |= c
 }
 
 func (m *Maze) CellAt(x, y int) Cell {
-	return m.cells[x+y*m.width]
+	return m.cells[m.cellIndex(x, y)]
 }
 
 func (m *Maze) HasWallAt(x, y int, o Orientation) bool {

@@ -57,16 +57,19 @@ func (r *MazeRenderer) DrawFlag(c Canvas, x, y int, frame int, captured bool) {
 		variant = 1
 	}
 	op := ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(x*r.cellWidth), float64(y*r.cellHeight))
+	tr := &op.GeoM
+	r.flag.Anchor(tr)
+	op.GeoM.Translate(float64(x*r.cellWidth+6), float64(y*r.cellHeight+9))
 	c.DrawImage(r.flag.GetImage(variant, frame), &op)
 }
 
 func (r *MazeRenderer) DrawRobot(c Canvas, robot *Robot, t float64, frame int) {
 	a := robot.AngleAt(t)
 	x, y := robot.CoordsAt(t)
-	tr := r.robot.Rotate(a)
-	tr.Translate(x*float64(r.cellWidth), y*float64(r.cellHeight))
 	op := ebiten.DrawImageOptions{}
-	op.GeoM = tr
+	tr := &op.GeoM
+	r.robot.Anchor(tr)
+	tr.Rotate(a)
+	tr.Translate((x+0.5)*float64(r.cellWidth), (y+0.5)*float64(r.cellHeight))
 	c.DrawImage(r.robot.GetImage(0, 0), &op)
 }

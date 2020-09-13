@@ -122,8 +122,8 @@ func main() {
 		wallHeight: wallHeight,
 		walls:      NewWalls(getImage(resources.GreyWallsPng)),
 		floors:     LoadFloors(getImage(resources.FloorsPng)),
-		robot:      NewSprite(getImage(resources.RobotPng), frameWidth, frameHeight),
-		flag:       NewSprite(getImage(resources.GreenFlagPng), frameWidth, frameHeight),
+		robot:      NewSprite(getImage(resources.RobotPng), frameWidth, frameHeight, 16, 16),
+		flag:       NewSprite(getImage(resources.GreenFlagPng), frameWidth, frameHeight, 10, 28),
 	}
 	game := &Game{
 		maze:         maze,

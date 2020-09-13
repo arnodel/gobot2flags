@@ -9,15 +9,18 @@ import (
 type Sprite struct {
 	img                      *ebiten.Image
 	width, height            int
+	anchorX, anchorY         float64
 	variantCount, frameCount int
 }
 
-func NewSprite(img *ebiten.Image, width, height int) *Sprite {
+func NewSprite(img *ebiten.Image, width, height int, anchorX, anchorY float64) *Sprite {
 	iw, ih := img.Size()
 	return &Sprite{
 		img:          img,
 		width:        width,
 		height:       height,
+		anchorX:      anchorX,
+		anchorY:      anchorY,
 		variantCount: ih / height,
 		frameCount:   iw / width,
 	}
@@ -39,4 +42,8 @@ func (s Sprite) Rotate(theta float64) ebiten.GeoM {
 		g.Translate(tx, ty)
 	}
 	return g
+}
+
+func (s Sprite) Anchor(g *ebiten.GeoM) {
+	g.Translate(-s.anchorX, -s.anchorY)
 }
