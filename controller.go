@@ -21,7 +21,7 @@ func (c *ManualController) NextCommand() (com Command) {
 	return
 }
 
-func (c *ManualController) UpdateNextCommand() {
+func (c *ManualController) UpdateNextCommand() Command {
 	switch {
 	case ebiten.IsKeyPressed(ebiten.KeyLeft):
 		c.nextCommand = TurnLeft
@@ -30,4 +30,5 @@ func (c *ManualController) UpdateNextCommand() {
 	case ebiten.IsKeyPressed(ebiten.KeyRight):
 		c.nextCommand = TurnRight
 	}
+	return c.nextCommand
 }

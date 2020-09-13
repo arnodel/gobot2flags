@@ -27,6 +27,7 @@ const (
 type Game struct {
 	outsideWidth, outsideHeight int
 	count                       int
+	step                        int
 	mazeRenderer                *MazeRenderer
 	maze                        *Maze
 	controller                  *ManualController
@@ -34,15 +35,17 @@ type Game struct {
 
 func (g *Game) Update(screen *ebiten.Image) error {
 	g.count++
-	g.controller.UpdateNextCommand()
-	if g.count%60 == 0 {
+	if g.maze.robot.CurrentCommand != NoCommand {
+		g.step = (g.step + 1) % 60
+	}
+	if g.step == 0 {
+		g.controller.UpdateNextCommand()
 		g.maze.AdvanceRobot(g.controller.NextCommand())
 	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-
 	const scale = 2
 	baseTr := ebiten.GeoM{}
 	baseTr.Translate(-float64(g.maze.width*frameWidth)/2, -float64(g.maze.height*frameHeight)/2)
@@ -53,7 +56,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		target:   screen,
 		baseGeoM: baseTr,
 	}
-	g.maze.Draw(canvas, g.mazeRenderer, float64(g.count%60)/60, g.count/60)
+	g.maze.Draw(canvas, g.mazeRenderer, float64(g.step)/60, g.count/60)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
