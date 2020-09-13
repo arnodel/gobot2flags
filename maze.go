@@ -285,10 +285,10 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 		for x := 0; x <= w; x++ {
 			cell := m.CellAt(x%w, y%h)
 			if y < h && cell.WestWall() {
-				r.DrawWestWall(c, x, y)
+				stack.Add(r.WestWall(x, y))
 			}
 			if x < w && cell.NorthWall() {
-				r.DrawNorthWall(c, x, y)
+				stack.Add(r.NorthWall(x, y))
 			}
 			if x < w && y < h && cell.Flag() {
 				stack.Add(r.Flag(x, y, frame, cell.Captured()))
