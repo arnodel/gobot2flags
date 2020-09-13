@@ -290,13 +290,14 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 				r.DrawNorthWall(c, x, y)
 			}
 			if x < w && y < h && cell.Flag() {
-				r.DrawFlag(c, x, y, frame, cell.Captured())
+				r.AddFlag(x, y, frame, cell.Captured())
 			}
 		}
 		// Draw the robot now (so it's placed correctly w.r.t. walls)
 		if robot != nil && robot.Y == y {
-			r.DrawRobot(c, robot, t, frame)
+			r.AddRobot(robot, t, frame)
 		}
+		r.DrawPending(c)
 	}
 
 }

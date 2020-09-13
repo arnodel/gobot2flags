@@ -85,6 +85,7 @@ type Robot struct {
 	Orientation
 	Velocity
 	Rotation
+	CurrentCommand Command
 }
 
 func (r Robot) AngleAt(t float64) float64 {
@@ -100,6 +101,7 @@ func (r Robot) CoordsAt(t float64) (float64, float64) {
 func (r Robot) ApplyCommand(com Command) Robot {
 	r.Rotation = NoRotation
 	r.Velocity = Velocity{}
+	r.CurrentCommand = com
 	switch com {
 	case TurnLeft:
 		r.Rotation = Left
