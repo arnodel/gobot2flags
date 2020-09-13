@@ -16,7 +16,7 @@ func (s *ImageStack) Add(toDraw ImageToDraw) {
 
 func (s *ImageStack) Draw(c Canvas) {
 	imgs := s.toDraw
-	sort.Slice(imgs, func(i, j int) bool {
+	sort.SliceStable(imgs, func(i, j int) bool {
 		return imgs[i].Z < imgs[j].Z
 	})
 	for _, toDraw := range imgs {
