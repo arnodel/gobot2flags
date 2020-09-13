@@ -278,6 +278,7 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	}
 
 	robot := m.robot
+	stack := ImageStack{}
 
 	// Draw the other walls and the flags
 	for y := 0; y <= h; y++ {
@@ -290,16 +291,16 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 				r.DrawNorthWall(c, x, y)
 			}
 			if x < w && y < h && cell.Flag() {
-				r.AddFlag(x, y, frame, cell.Captured())
+				stack.Add(r.Flag(x, y, frame, cell.Captured()))
 			}
 		}
 		// Draw the robot now (so it's placed correctly w.r.t. walls)
 		if robot != nil && robot.Y == y {
-			r.AddRobot(robot, t, frame)
+			stack.Add(r.Robot(robot, t, frame))
 		}
-		r.DrawPending(c)
+		stack.Draw(c)
+		stack.Empty() // Reuse the memory
 	}
-
 }
 
 func (m *Maze) AdvanceRobot(com Command) bool {

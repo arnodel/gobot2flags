@@ -1,8 +1,6 @@
 package main
 
 import (
-	"sort"
-
 	"github.com/hajimehoshi/ebiten"
 )
 
@@ -21,19 +19,12 @@ func (s *transformCanvas) DrawImage(img *ebiten.Image, options *ebiten.DrawImage
 	return s.target.DrawImage(img, &op)
 }
 
-type imageToDraw struct {
-	image   *ebiten.Image
-	options *ebiten.DrawImageOptions
-	y       float64
-}
-
 type MazeRenderer struct {
 	cellWidth, cellHeight int
 	wallWidth, wallHeight int
 	walls                 Walls
 	floors                Floors
 	flag, robot           *Sprite
-	pending               []imageToDraw
 }
 
 func (r *MazeRenderer) DrawFloor(c Canvas, x, y int, col Color) {
@@ -60,26 +51,7 @@ func (r *MazeRenderer) DrawCornerWall(c Canvas, x, y int) {
 	c.DrawImage(r.walls.Corner, &op)
 }
 
-func (r *MazeRenderer) addPending(img *ebiten.Image, op *ebiten.DrawImageOptions, y float64) {
-	r.pending = append(r.pending, imageToDraw{
-		image:   img,
-		options: op,
-		y:       y,
-	})
-}
-
-func (r *MazeRenderer) DrawPending(c Canvas) {
-	imgs := r.pending
-	sort.Slice(imgs, func(i, j int) bool {
-		return imgs[i].y < imgs[j].y
-	})
-	for _, toDraw := range imgs {
-		c.DrawImage(toDraw.image, toDraw.options)
-	}
-	r.pending = nil
-}
-
-func (r *MazeRenderer) AddFlag(x, y int, frame int, captured bool) {
+func (r *MazeRenderer) Flag(x, y int, frame int, captured bool) ImageToDraw {
 	variant := 0
 	if captured {
 		variant = 1
@@ -89,10 +61,14 @@ func (r *MazeRenderer) AddFlag(x, y int, frame int, captured bool) {
 	r.flag.Anchor(tr)
 	flagY := float64(y*r.cellHeight + 9)
 	op.GeoM.Translate(float64(x*r.cellWidth+6), flagY)
-	r.addPending(r.flag.GetImage(variant, frame), &op, flagY)
+	return ImageToDraw{
+		Image:   r.flag.GetImage(variant, frame),
+		Options: &op,
+		Z:       flagY,
+	}
 }
 
-func (r *MazeRenderer) AddRobot(robot *Robot, t float64, frame int) {
+func (r *MazeRenderer) Robot(robot *Robot, t float64, frame int) ImageToDraw {
 	a := robot.AngleAt(t)
 	x, y := robot.CoordsAt(t)
 	op := ebiten.DrawImageOptions{}
@@ -101,5 +77,9 @@ func (r *MazeRenderer) AddRobot(robot *Robot, t float64, frame int) {
 	tr.Rotate(a)
 	robotY := (y + 0.5) * float64(r.cellHeight)
 	tr.Translate((x+0.5)*float64(r.cellWidth), robotY)
-	r.addPending(r.robot.GetImage(0, 0), &op, robotY)
+	return ImageToDraw{
+		Image:   r.robot.GetImage(0, 0),
+		Options: &op,
+		Z:       robotY,
+	}
 }
