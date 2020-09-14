@@ -53,10 +53,14 @@ func (r *MazeRenderer) WestWall(x, y int) ImageToDraw {
 	}
 }
 
-func (r *MazeRenderer) DrawCornerWall(c Canvas, x, y int) {
+func (r *MazeRenderer) CornerWall(x, y int) ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth-r.wallWidth/2), float64(y*r.cellHeight-r.wallHeight))
-	c.DrawImage(r.walls.Corner, &op)
+	return ImageToDraw{
+		Image:   r.walls.Corner,
+		Options: &op,
+		Z:       float64(y*r.cellHeight) - 1e-3, // Subtract a small number to make it go behind the other walls
+	}
 }
 
 func (r *MazeRenderer) Flag(x, y int, frame int, captured bool) ImageToDraw {

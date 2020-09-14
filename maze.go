@@ -268,15 +268,6 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 		}
 	}
 
-	// Draw the corner walls
-	for y := 0; y <= h; y++ {
-		for x := 0; x <= w; x++ {
-			if m.CellAt(x%w, y%h).CornerWall() {
-				r.DrawCornerWall(c, x, y)
-			}
-		}
-	}
-
 	robot := m.robot
 	stack := ImageStack{}
 
@@ -284,6 +275,9 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	for y := 0; y <= h; y++ {
 		for x := 0; x <= w; x++ {
 			cell := m.CellAt(x%w, y%h)
+			if cell.CornerWall() {
+				stack.Add(r.CornerWall(x, y))
+			}
 			if y < h && cell.WestWall() {
 				stack.Add(r.WestWall(x, y))
 			}
