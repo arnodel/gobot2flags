@@ -261,7 +261,7 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	h := m.height
 	w := m.width
 
-	// Draw the floors
+	// Draw the floors first as they are under everything
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			r.DrawFloor(c, x, y, m.CellAt(x, y).Color())
@@ -271,7 +271,7 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	robot := m.robot
 	stack := ImageStack{}
 
-	// Draw the other walls and the flags
+	// Draw the walls and objects
 	for y := 0; y <= h; y++ {
 		for x := 0; x <= w; x++ {
 			cell := m.CellAt(x%w, y%h)
