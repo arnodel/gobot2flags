@@ -274,7 +274,7 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	// Draw the walls and flags
 	for y := 0; y <= h; y++ {
 		for x := 0; x <= w; x++ {
-			cell := m.CellAt(x%w, y%h)
+			cell := m.CellAt(x, y)
 			if cell.CornerWall() {
 				stack.Add(r.CornerWall(x, y))
 			}
@@ -296,7 +296,7 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	}
 
 	stack.Draw(c)
-	stack.Empty() // Reuse the memory
+	stack.Empty() // Reuse the underlying slice, same number of objects each time!
 }
 
 func (m *Maze) AdvanceRobot(com Command) bool {
