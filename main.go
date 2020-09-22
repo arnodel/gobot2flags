@@ -108,11 +108,11 @@ func getImage(b []byte) *ebiten.Image {
 func main() {
 	maze, err := MazeFromString(`
 +--+--+--+--+
-|RF|R |R  R |
+|RF|R |R  RF|
 +  .  .  .  +
 |Y  B> Y  B |
 +--+--+  +  +
-|B  Y  B |YF|
+|BF Y  B |YF|
 +--+--+--+--+
 `)
 	if err != nil {

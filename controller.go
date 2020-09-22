@@ -9,6 +9,9 @@ const (
 	TurnLeft
 	TurnRight
 	MoveForward
+	PaintRed
+	PaintBlue
+	PaintYellow
 )
 
 type ManualController struct {
