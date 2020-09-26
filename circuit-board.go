@@ -132,6 +132,13 @@ func (b *CircuitBoard) SetChipAt(x, y int, c Chip) {
 	b.chips[b.chipIndex(x, y)] = c
 }
 
+func (b *CircuitBoard) Draw(c Canvas, r *MazeRenderer) {
+	h := b.height
+	w := b.width
+	_, _ = w, h
+	// TODO
+}
+
 var chipTypeMap = map[string]ChipType{
 	"ST": StartChip,
 	"W?": IsWallAheadChip,

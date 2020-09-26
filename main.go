@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"image"
 	_ "image/png"
 	"log"
 
@@ -63,46 +61,6 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	g.outsideWidth = outsideWidth
 	g.outsideHeight = outsideHeight
 	return outsideWidth, outsideHeight
-}
-
-func subImage(img *ebiten.Image, x, y int) *ebiten.Image {
-	return img.SubImage(image.Rect(x*frameWidth, y*frameHeight, (x+1)*frameWidth, (y+1)*frameHeight)).(*ebiten.Image)
-}
-
-type Walls struct {
-	Horizontal, Vertical, Corner *ebiten.Image
-}
-
-func NewWalls(img *ebiten.Image) Walls {
-	return Walls{
-		Horizontal: img.SubImage(image.Rect(0, frameHeight, frameWidth, frameHeight+wallHeight)).(*ebiten.Image),
-		Vertical:   img.SubImage(image.Rect(0, 2*frameHeight, wallWidth, 3*frameHeight)).(*ebiten.Image),
-		Corner:     img.SubImage(image.Rect(0, 0, wallWidth, wallHeight)).(*ebiten.Image),
-	}
-}
-
-type Floors [4]*ebiten.Image
-
-func LoadFloors(img *ebiten.Image) Floors {
-	return Floors{
-		subImage(img, 0, 0),
-		subImage(img, 1, 0),
-		subImage(img, 2, 0),
-		subImage(img, 3, 0),
-	}
-}
-
-func (f Floors) GetImage(c Color) *ebiten.Image {
-	return f[c]
-}
-
-func getImage(b []byte) *ebiten.Image {
-	img, _, err := image.Decode(bytes.NewReader(b))
-	if err != nil {
-		log.Fatal(err)
-	}
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
-	return eimg
 }
 
 func main() {
