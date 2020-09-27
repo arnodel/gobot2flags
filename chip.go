@@ -6,6 +6,9 @@ func (c Chip) Type() ChipType {
 	return ChipType(c & 0xff)
 }
 
+func (c Chip) IsTest() bool {
+	return c&0x10 != 0
+}
 func (c Chip) ArrowYes() (Orientation, bool) {
 	data := (c >> 8) & 0xf
 	return Orientation(data & 0x3), (data & 0x4) != 0

@@ -132,11 +132,47 @@ func (b *CircuitBoard) SetChipAt(x, y int, c Chip) {
 	b.chips[b.chipIndex(x, y)] = c
 }
 
-func (b *CircuitBoard) Draw(c Canvas, r *MazeRenderer) {
+func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
 	h := b.height
 	w := b.width
 	_, _ = w, h
-	// TODO
+
+	// Draw the background
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			c.Draw(r.Background(x, y))
+		}
+	}
+
+	// Draw the arrows
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			chip := b.ChipAt(x, y)
+			if o, ok := chip.ArrowYes(); ok {
+				if chip.IsTest() {
+					c.Draw(r.ArrowYes(x, y, o))
+				} else {
+					c.Draw(r.Arrow(x, y, o))
+				}
+			}
+			if o, ok := chip.ArrowNo(); ok {
+				c.Draw(r.ArrowNo(x, y, o))
+			}
+		}
+	}
+
+	// Draw the chips
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			chip := b.ChipAt(x, y)
+			if chip.Type() != NoChip {
+				img, ok := r.Chip(chip.Type(), x, y)
+				if ok {
+					c.Draw(img)
+				}
+			}
+		}
+	}
 }
 
 var chipTypeMap = map[string]ChipType{
@@ -154,9 +190,3 @@ var chipTypeMap = map[string]ChipType{
 	"..": NoChip,
 	"  ": NoChip,
 }
-
-const foo = `
-|W? y> MF -> TL|
-|nv    ..    ..|
-|MF            |
-`

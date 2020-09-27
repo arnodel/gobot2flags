@@ -4,7 +4,7 @@ package resources
 //go:generate file2byteslice -package=resources -input=./greywalls.png -output=./greywalls.go -var=GreyWallsPng
 //go:generate file2byteslice -package=resources -input=./floors.png -output=./floors.go -var=FloorsPng
 //go:generate file2byteslice -package=resources -input=./robot.png -output=./robot.go -var=RobotPng
-//go:genearate file2byteslice --package=resources -input=./circuitboardtiles.png output=./circuitboardtiles.go -var=CircuitBoarTiles
+//go:generate file2byteslice -package=resources -input=./circuitboardtiles.png -output=./circuitboardtiles.go -var=CircuitBoarTiles
 
 import (
 	// Dummy imports for go.mod for some Go files with 'ignore' tags. For example, `go mod tidy` does not
