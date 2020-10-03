@@ -98,12 +98,17 @@ func main() {
 |BF Y  B |YF|
 +--+--+--+--+
 `)
-	board, err := CircuitBoardFromString(`
-|ST -> W? y> TL|
-|      nv     v|
-|      MF <- ..|`)
 	if err != nil {
 		log.Fatalf("Could not create maze: %s", err)
+	}
+	board, err := CircuitBoardFromString(`
+|ST -> W? y> TL|
+| ^    nv     v|
+|..    MF <- ..|
+| ^     v      |
+|.. <- PR      |`)
+	if err != nil {
+		log.Fatalf("Could not create circuit board: %s", err)
 	}
 	boardRenderer := NewBoardChipImages(getImage(resources.CircuitBoarTiles))
 	mazeRenderer := &MazeRenderer{
