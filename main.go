@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/arnodel/gobots2flags/resources"
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -34,7 +34,7 @@ type Game struct {
 	controller                  *ManualController
 }
 
-func (g *Game) Update(screen *ebiten.Image) error {
+func (g *Game) Update() error {
 	g.count++
 	if g.maze.robot.CurrentCommand != NoCommand {
 		g.step = (g.step + 1) % 60

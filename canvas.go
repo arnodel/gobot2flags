@@ -1,10 +1,10 @@
 package main
 
-import "github.com/hajimehoshi/ebiten"
+import "github.com/hajimehoshi/ebiten/v2"
 
 type Canvas interface {
-	DrawImage(img *ebiten.Image, options *ebiten.DrawImageOptions) error
-	Draw(ImageToDraw) error
+	DrawImage(img *ebiten.Image, options *ebiten.DrawImageOptions)
+	Draw(ImageToDraw)
 }
 
 type transformCanvas struct {
@@ -12,12 +12,14 @@ type transformCanvas struct {
 	baseGeoM ebiten.GeoM
 }
 
-func (s *transformCanvas) DrawImage(img *ebiten.Image, options *ebiten.DrawImageOptions) error {
+var _ Canvas = &transformCanvas{}
+
+func (s *transformCanvas) DrawImage(img *ebiten.Image, options *ebiten.DrawImageOptions) {
 	op := *options
 	op.GeoM.Concat(s.baseGeoM)
-	return s.target.DrawImage(img, &op)
+	s.target.DrawImage(img, &op)
 }
 
-func (s *transformCanvas) Draw(toDraw ImageToDraw) error {
-	return s.DrawImage(toDraw.Image, toDraw.Options)
+func (s *transformCanvas) Draw(toDraw ImageToDraw) {
+	s.DrawImage(toDraw.Image, toDraw.Options)
 }

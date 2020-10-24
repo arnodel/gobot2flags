@@ -5,7 +5,7 @@ import (
 	"image"
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type MazeRenderer struct {
@@ -121,6 +121,6 @@ func getImage(b []byte) *ebiten.Image {
 	if err != nil {
 		log.Fatal(err)
 	}
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 	return eimg
 }
