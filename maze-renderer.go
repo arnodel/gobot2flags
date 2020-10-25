@@ -16,10 +16,13 @@ type MazeRenderer struct {
 	flag, robot           *Sprite
 }
 
-func (r *MazeRenderer) DrawFloor(c Canvas, x, y int, col Color) {
+func (r *MazeRenderer) Floor(x, y int, col Color) ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth), float64(y*r.cellHeight))
-	c.DrawImage(r.floors.GetImage(col), &op)
+	return ImageToDraw{
+		Image:   r.floors.GetImage(col),
+		Options: &op,
+	}
 }
 
 func (r *MazeRenderer) NorthWall(x, y int) ImageToDraw {

@@ -264,7 +264,7 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	// Draw the floors first as they are under everything
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			r.DrawFloor(c, x, y, m.CellAt(x, y).Color())
+			c.Draw(r.Floor(x, y, m.CellAt(x, y).Color()))
 		}
 	}
 
