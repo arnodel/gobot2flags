@@ -41,6 +41,9 @@ func (g *Game) Update() error {
 	}
 	if g.step == 0 {
 		g.controller.UpdateNextCommand()
+		if g.controller.GetSwitch() {
+			g.showBoard = !g.showBoard
+		}
 		g.maze.AdvanceRobot(g.controller.NextCommand())
 	}
 	return nil
@@ -110,16 +113,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create circuit board: %s", err)
 	}
-	boardRenderer := NewBoardChipImages(getImage(resources.CircuitBoarTiles))
+	boardRenderer := NewBoardChipImages(resources.GetImage("circuitboardtiles.png"))
 	mazeRenderer := &MazeRenderer{
 		cellWidth:  frameWidth,
 		cellHeight: frameHeight,
 		wallWidth:  wallWidth,
 		wallHeight: wallHeight,
-		walls:      NewWalls(getImage(resources.GreyWallsPng)),
-		floors:     LoadFloors(getImage(resources.FloorsPng)),
-		robot:      NewSprite(getImage(resources.RobotPng), frameWidth, frameHeight, 16, 16),
-		flag:       NewSprite(getImage(resources.GreenFlagPng), frameWidth, frameHeight, 10, 28),
+		walls:      NewWalls(resources.GetImage("greywalls.png")),
+		floors:     LoadFloors(resources.GetImage("floors.png")),
+		robot:      NewSprite(resources.GetImage("robot.png"), frameWidth, frameHeight, 16, 16),
+		flag:       NewSprite(resources.GetImage("greenflag.png"), frameWidth, frameHeight, 10, 28),
 	}
 	game := &Game{
 		maze:          maze,
