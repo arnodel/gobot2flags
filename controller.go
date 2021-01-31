@@ -15,7 +15,9 @@ const (
 )
 
 type ManualController struct {
-	nextCommand Command
+	nextCommand  Command
+	spacePressed bool
+	switchView   bool
 }
 
 func (c *ManualController) NextCommand() (com Command) {
@@ -24,7 +26,18 @@ func (c *ManualController) NextCommand() (com Command) {
 	return
 }
 
+func (c *ManualController) GetSwitch() bool {
+	s := c.switchView
+	c.switchView = false
+	return s
+}
+
 func (c *ManualController) UpdateNextCommand() Command {
+	spacePressed := ebiten.IsKeyPressed(ebiten.KeySpace)
+	if spacePressed && !c.spacePressed {
+		c.switchView = true
+	}
+	c.spacePressed = spacePressed
 	switch {
 	case ebiten.IsKeyPressed(ebiten.KeyLeft):
 		c.nextCommand = TurnLeft
