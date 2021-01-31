@@ -1,6 +1,10 @@
 package main
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"image"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
 
 type Canvas interface {
 	DrawImage(img *ebiten.Image, options *ebiten.DrawImageOptions)
@@ -22,4 +26,28 @@ func (s *transformCanvas) DrawImage(img *ebiten.Image, options *ebiten.DrawImage
 
 func (s *transformCanvas) Draw(toDraw ImageToDraw) {
 	s.DrawImage(toDraw.Image, toDraw.Options)
+}
+
+func (s *transformCanvas) Clip(r image.Rectangle) *transformCanvas {
+	return &transformCanvas{
+		target:   s.target.SubImage(r).(*ebiten.Image),
+		baseGeoM: s.baseGeoM,
+	}
+}
+
+func (s *transformCanvas) Center() *transformCanvas {
+	tr := s.baseGeoM
+	bounds := s.target.Bounds()
+	tr.Translate(float64(bounds.Min.X+bounds.Max.X)/2, float64(bounds.Min.Y+bounds.Max.Y)/2)
+	return &transformCanvas{
+		target:   s.target,
+		baseGeoM: tr,
+	}
+}
+
+func (s *transformCanvas) CursorPosition() (float64, float64) {
+	x, y := ebiten.CursorPosition()
+	inv := s.baseGeoM
+	inv.Invert()
+	return inv.Apply(float64(x), float64(y))
 }

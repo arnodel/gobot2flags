@@ -4,26 +4,37 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+type ChipRenderer struct {
+	*Sprite
+}
+
+func (r ChipRenderer) GetChipImage(c ChipType) *ebiten.Image {
+	return r.GetImage(chipType2imageIdx[c], 0)
+}
+
+func (r ChipRenderer) GetArrowImage(a ArrowType) *ebiten.Image {
+	return r.GetImage(arrowType2ImageIdx[a], 0)
+}
+
 type CircuitBoardRenderer struct {
-	chips         *Sprite
+	chips         ChipRenderer
 	width, height float64
 }
 
-func NewBoardChipImages(img *ebiten.Image) CircuitBoardRenderer {
+func NewCircuitBoardRenderer(chips ChipRenderer) CircuitBoardRenderer {
 	return CircuitBoardRenderer{
-		chips:  NewSprite(img, 32, 32, 16, 16),
+		chips:  chips,
 		width:  32,
 		height: 32,
 	}
 }
 
-func (b CircuitBoardRenderer) Chip(c ChipType, x, y int) (toDraw ImageToDraw, ok bool) {
-	var i int
-	i, ok = chipType2imageIdx[c]
-	if ok {
-		toDraw = b.imageByIndex(i, x, y)
-	}
-	return
+func (b CircuitBoardRenderer) GetSlotCoords(x, y float64) (int, int) {
+	return int(x / b.width), int(y / b.height)
+}
+
+func (b CircuitBoardRenderer) Chip(c ChipType, x, y int) ImageToDraw {
+	return b.imageByIndex(chipType2imageIdx[c], x, y)
 }
 
 func (b CircuitBoardRenderer) Background(x, y int) ImageToDraw {
@@ -71,16 +82,22 @@ func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o Orientation) ImageT
 }
 
 var chipType2imageIdx = map[ChipType]int{
-	StartChip:       startIdx,
-	ForwardChip:     forwardIdx,
-	TurnLeftChip:    turnLeftIdx,
-	TurnRightChip:   turnRightIdx,
-	PaintRedChip:    paintRedIdx,
-	PaintYellowChip: paintYellowIdx,
-	PaintBlueChip:   paintBlueIdx,
-	IsWallAheadChip: isWallAheadIdx,
-	IsFloorRedChip:  isFloorRedIdx,
-	IsFloorBlueChip: isFloorBueIdx,
+	StartChip:         startIdx,
+	ForwardChip:       forwardIdx,
+	TurnLeftChip:      turnLeftIdx,
+	TurnRightChip:     turnRightIdx,
+	PaintRedChip:      paintRedIdx,
+	PaintYellowChip:   paintYellowIdx,
+	PaintBlueChip:     paintBlueIdx,
+	IsWallAheadChip:   isWallAheadIdx,
+	IsFloorRedChip:    isFloorRedIdx,
+	IsFloorYellowChip: isFloorYellowIdx,
+	IsFloorBlueChip:   isFloorBueIdx,
+}
+
+var arrowType2ImageIdx = map[ArrowType]int{
+	ArrowNo:  arrowNoNorthIdx,
+	ArrowYes: arrowYesNorthIdx,
 }
 
 const (

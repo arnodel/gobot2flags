@@ -124,12 +124,34 @@ func (b *CircuitBoard) chipIndex(x, y int) int {
 	return x + b.width*y
 }
 
+func (b *CircuitBoard) Contains(x, y int) bool {
+	return x >= 0 && x < b.width && y >= 0 && y < b.height
+}
+
 func (b *CircuitBoard) ChipAt(x, y int) Chip {
 	return b.chips[b.chipIndex(x, y)]
 }
 
 func (b *CircuitBoard) SetChipAt(x, y int, c Chip) {
+	if c.Type() == StartChip {
+		currentStart := b.ChipAt(b.startPos.X, b.startPos.Y)
+		if currentStart.Type() == StartChip {
+			b.chips[b.chipIndex(b.startPos.X, b.startPos.Y)] = currentStart.WithType(NoChip)
+		}
+		b.startPos = Position{x, y}
+	}
+	p := Position{x, y}
+	if o, ok := c.ArrowYes(); ok {
+		b.deleteArrow(p.Move(o.VelocityForward()), o.Reverse())
+	}
+	if o, ok := c.ArrowNo(); ok {
+		b.deleteArrow(p.Move(o.VelocityForward()), o.Reverse())
+	}
 	b.chips[b.chipIndex(x, y)] = c
+}
+
+func (b *CircuitBoard) deleteArrow(p Position, o Orientation) {
+	b.chips[b.chipIndex(p.X, p.Y)] = b.ChipAt(p.X, p.Y).ClearArrow(o)
 }
 
 func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
@@ -155,7 +177,7 @@ func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
 					c.Draw(r.Arrow(x, y, o))
 				}
 			}
-			if o, ok := chip.ArrowNo(); ok {
+			if o, ok := chip.ArrowNo(); ok && chip.IsTest() {
 				c.Draw(r.ArrowNo(x, y, o))
 			}
 		}
@@ -166,10 +188,7 @@ func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
 		for x := 0; x < w; x++ {
 			chip := b.ChipAt(x, y)
 			if chip.Type() != NoChip {
-				img, ok := r.Chip(chip.Type(), x, y)
-				if ok {
-					c.Draw(img)
-				}
+				c.Draw(r.Chip(chip.Type(), x, y))
 			}
 		}
 	}

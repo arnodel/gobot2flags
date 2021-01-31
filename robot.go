@@ -46,12 +46,31 @@ func (v Velocity) TranslationAt(t float64) (float64, float64) {
 	return float64(v.Dx) * t, float64(v.Dy) * t
 }
 
+func (v Velocity) Orientation() (Orientation, bool) {
+	switch {
+	case v.Dx == 0 && v.Dy > 0:
+		return South, true
+	case v.Dx == 0 && v.Dy < 0:
+		return North, true
+	case v.Dy == 0 && v.Dx > 0:
+		return East, true
+	case v.Dy == 0 && v.Dx < 0:
+		return West, true
+	default:
+		return 0, false
+	}
+}
+
 func (o Orientation) Rotate(r Rotation) Orientation {
 	o = (o + Orientation(r)) % 4
 	if o < 0 {
 		return o + 4
 	}
 	return o
+}
+
+func (o Orientation) Reverse() Orientation {
+	return (o + 2) % 4
 }
 
 func (o Orientation) VelocityForward() Velocity {

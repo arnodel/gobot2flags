@@ -39,11 +39,37 @@ func (c Chip) ClearArrowNo() Chip {
 }
 
 func (c Chip) WithArrowYes(o Orientation) Chip {
-	return c.ClearArrowYes() | Chip((0x4|o)<<8)
+	return c.ClearArrow(o).ClearArrowYes() | Chip((0x4|o)<<8)
 }
 
 func (c Chip) WithArrowNo(o Orientation) Chip {
-	return c.ClearArrowNo() | Chip((0x4|o)<<12)
+	if !c.Type().IsDecision() {
+		return c
+	}
+	return c.ClearArrow(o).ClearArrowNo() | Chip((0x4|o)<<12)
+}
+
+func (c Chip) ClearArrow(o Orientation) Chip {
+	if oy, ok := c.ArrowYes(); ok && oy == o {
+		return c.ClearArrowYes()
+	}
+	if on, ok := c.ArrowNo(); ok && on == o {
+		return c.ClearArrowNo()
+	}
+	return c
+}
+
+func (c Chip) WithArrow(o Orientation, a ArrowType) Chip {
+	switch a {
+	case ArrowYes:
+		return c.WithArrowYes(o)
+	case ArrowNo:
+		return c.WithArrowNo(o)
+	case NoArrow:
+		return c.ClearArrow(o)
+	default:
+		return c
+	}
 }
 
 func (c Chip) Command(floorColor Color, wallAhead bool) (Command, bool) {
@@ -91,4 +117,16 @@ const (
 	IsFloorRedChip
 	IsFloorYellowChip
 	IsFloorBlueChip
+)
+
+func (t ChipType) IsDecision() bool {
+	return t >= 0x10
+}
+
+type ArrowType byte
+
+const (
+	NoArrow ArrowType = iota
+	ArrowYes
+	ArrowNo
 )
