@@ -93,8 +93,9 @@ type Game struct {
 	board                       *CircuitBoard
 	chipSelector                *boardTiles
 	controller                  *ManualController
-	circuitBoardWindow          *Window
-	chipSelectorWindow          *Window
+	mainWindow                  *Window
+	controlsWindow              *Window
+	gameControlSelector         *gameControlSelector
 	pointer                     PointerTracker
 }
 
@@ -124,18 +125,38 @@ func (g *Game) Update() error {
 		baseTr2.Translate(-float64(g.board.width*frameWidth)/2, -float64(g.board.height*frameHeight)/2)
 		baseTr2.Scale(scale, scale)
 
-		g.chipSelectorWindow = &Window{
+		g.controlsWindow = &Window{
 			bounds: r1,
 			tr:     baseTr1,
 		}
-		g.chipSelectorWindow.Center()
-		g.circuitBoardWindow = &Window{
+		g.controlsWindow.Center()
+		g.mainWindow = &Window{
 			bounds: r2,
 			tr:     baseTr2,
 		}
-		g.circuitBoardWindow.Center()
+		g.mainWindow.Center()
 	} else {
+		r1, r2 := hSplit(screenRect, 64)
+		const scale = 2
 
+		baseTr1 := ebiten.GeoM{}
+		baseTr1.Translate(-float64(len(gameControls)*24)/2, -float64(frameHeight)/2)
+		baseTr1.Scale(scale, scale)
+
+		baseTr2 := ebiten.GeoM{}
+		baseTr2.Translate(-float64(g.maze.width*frameWidth)/2, -float64(g.maze.height*frameHeight)/2)
+		baseTr2.Scale(scale, scale)
+
+		g.controlsWindow = &Window{
+			bounds: r1,
+			tr:     baseTr1,
+		}
+		g.controlsWindow.Center()
+		g.mainWindow = &Window{
+			bounds: r2,
+			tr:     baseTr2,
+		}
+		g.mainWindow.Center()
 	}
 	g.pointer.Update()
 	if g.showBoard {
@@ -143,11 +164,11 @@ func (g *Game) Update() error {
 		case TouchUp:
 			if g.pointer.frames > 0 {
 				x, y := g.pointer.currentPos.X, g.pointer.currentPos.Y
-				if g.chipSelectorWindow.Contains(x, y) {
-					xx, yy := g.chipSelectorWindow.Coords(x, y)
+				if g.controlsWindow.Contains(x, y) {
+					xx, yy := g.controlsWindow.Coords(x, y)
 					g.chipSelector.Click(xx, yy)
-				} else if g.circuitBoardWindow.Contains(x, y) {
-					xx, yy := g.circuitBoardWindow.Coords(x, y)
+				} else if g.mainWindow.Contains(x, y) {
+					xx, yy := g.mainWindow.Coords(x, y)
 					sx, sy := g.boardRenderer.GetSlotCoords(xx, yy)
 					if g.board.Contains(sx, sy) {
 						newChip := g.board.ChipAt(sx, sy).WithType(g.chipSelector.selectedType)
@@ -158,9 +179,9 @@ func (g *Game) Update() error {
 		case Dragging:
 			x1, y1 := g.pointer.lastPos.X, g.pointer.lastPos.Y
 			x2, y2 := g.pointer.currentPos.X, g.pointer.currentPos.Y
-			if g.circuitBoardWindow.Contains(x1, y1) && g.circuitBoardWindow.Contains(x2, y2) {
-				xx1, yy1 := g.circuitBoardWindow.Coords(x1, y1)
-				xx2, yy2 := g.circuitBoardWindow.Coords(x2, y2)
+			if g.mainWindow.Contains(x1, y1) && g.mainWindow.Contains(x2, y2) {
+				xx1, yy1 := g.mainWindow.Coords(x1, y1)
+				xx2, yy2 := g.mainWindow.Coords(x2, y2)
 				sx1, sy1 := g.boardRenderer.GetSlotCoords(xx1, yy1)
 				sx2, sy2 := g.boardRenderer.GetSlotCoords(xx2, yy2)
 				if g.board.Contains(sx1, sy1) && g.board.Contains(sx2, sy2) {
@@ -173,6 +194,17 @@ func (g *Game) Update() error {
 						}
 						g.board.SetChipAt(sx1, sy1, newChip)
 					}
+				}
+			}
+		}
+	} else {
+		switch g.pointer.status {
+		case TouchUp:
+			if g.pointer.frames > 0 {
+				x, y := g.pointer.currentPos.X, g.pointer.currentPos.Y
+				if g.controlsWindow.Contains(x, y) {
+					xx, yy := g.controlsWindow.Coords(x, y)
+					g.gameControlSelector.Click(xx, yy)
 				}
 			}
 		}
@@ -189,21 +221,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) drawMaze(screen *ebiten.Image) {
-	const scale = 2
-	baseTr := ebiten.GeoM{}
-	baseTr.Translate(-float64(g.maze.width*frameWidth)/2, -float64(g.maze.height*frameHeight)/2)
-	baseTr.Scale(scale, scale)
-
-	canvas := (&transformCanvas{
-		target:   screen,
-		baseGeoM: baseTr,
-	}).Center()
-	g.maze.Draw(canvas, g.mazeRenderer, float64(g.step)/60, g.count/60)
+	g.gameControlSelector.Draw(g.controlsWindow.Canvas(screen))
+	g.maze.Draw(g.mainWindow.Canvas(screen), g.mazeRenderer, float64(g.step)/60, g.count/60)
 }
 
 func (g *Game) drawBoard(screen *ebiten.Image) {
-	g.chipSelector.Draw(g.chipSelectorWindow.Canvas(screen), g.boardRenderer.chips)
-	g.board.Draw(g.circuitBoardWindow.Canvas(screen), g.boardRenderer)
+	g.chipSelector.Draw(g.controlsWindow.Canvas(screen), g.boardRenderer.chips)
+	g.board.Draw(g.mainWindow.Canvas(screen), g.boardRenderer)
 }
 
 func hSplit(r image.Rectangle, y int) (r1 image.Rectangle, r2 image.Rectangle) {
@@ -262,6 +286,9 @@ func main() {
 		controller:    &ManualController{},
 		showBoard:     true,
 		chipSelector:  new(boardTiles),
+		gameControlSelector: &gameControlSelector{
+			controlImages: NewSprite(resources.GetImage("gamecontrols.png"), 32, 32, 16, 16),
+		},
 	}
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Gobot 2 Flags")
