@@ -1,6 +1,10 @@
 package main
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
 
 type Command int
 
@@ -47,4 +51,46 @@ func (c *ManualController) UpdateNextCommand() Command {
 		c.nextCommand = TurnRight
 	}
 	return c.nextCommand
+}
+
+type BoardController struct {
+	board    *CircuitBoard
+	maze     *Maze
+	robot    *Robot
+	boardPos Position
+}
+
+func newBoardController(board *CircuitBoard, maze *Maze) *BoardController {
+	return &BoardController{
+		board:    board,
+		maze:     maze,
+		robot:    maze.robot,
+		boardPos: board.startPos,
+	}
+}
+
+func (c *BoardController) NextCommand() Command {
+	c.board.ClearActiveChips()
+	var (
+		pos        = c.robot.Position
+		wallAhead  = c.maze.HasWallAt(pos.X, pos.Y, c.robot.Orientation)
+		floorColor = c.maze.CellAt(pos.X, pos.Y).Color()
+	)
+	for {
+		var (
+			chip            = c.board.ChipAt(c.boardPos.X, c.boardPos.Y)
+			com, arrowType  = chip.Command(floorColor, wallAhead)
+			nextChipDir, ok = chip.Arrow(arrowType)
+		)
+		c.board.ActivateChip(c.boardPos.X, c.boardPos.Y, nextChipDir)
+		if ok {
+			c.boardPos = c.boardPos.Move(nextChipDir.VelocityForward())
+		} else {
+			c.boardPos = c.board.startPos
+		}
+		log.Printf("board -> %v, com: %v", c.boardPos, com)
+		if com != NoCommand || c.board.ChipAt(c.boardPos.X, c.boardPos.Y).IsActive() {
+			return com
+		}
+	}
 }

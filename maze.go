@@ -79,6 +79,14 @@ func NewMaze(width, height int) *Maze {
 	}
 }
 
+func (m *Maze) Clone() *Maze {
+	clone := NewMaze(m.width, m.height)
+	copy(clone.cells, m.cells)
+	robot := *m.robot
+	clone.robot = &robot
+	return clone
+}
+
 func (m *Maze) cellIndex(x, y int) int {
 	if x < 0 {
 		x = x%m.width + m.width

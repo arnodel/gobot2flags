@@ -33,38 +33,38 @@ func (b CircuitBoardRenderer) GetSlotCoords(x, y float64) (int, int) {
 	return int(x / b.width), int(y / b.height)
 }
 
-func (b CircuitBoardRenderer) Chip(c ChipType, x, y int) ImageToDraw {
-	return b.imageByIndex(chipType2imageIdx[c], x, y)
+func (b CircuitBoardRenderer) Chip(c ChipType, x, y int, active bool) ImageToDraw {
+	return b.imageByIndex(chipType2imageIdx[c], x, y, active)
 }
 
-func (b CircuitBoardRenderer) Background(x, y int) ImageToDraw {
-	return b.imageByIndex(backgroundIdx, x, y)
+func (b CircuitBoardRenderer) Background(x, y int, active bool) ImageToDraw {
+	return b.imageByIndex(backgroundIdx, x, y, active)
 }
 
-func (b CircuitBoardRenderer) Arrow(x, y int, o Orientation) ImageToDraw {
-	return b.arrow(arrowNorthIdx, x, y, o)
+func (b CircuitBoardRenderer) Arrow(x, y int, o Orientation, active bool) ImageToDraw {
+	return b.arrow(arrowNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) ArrowYes(x, y int, o Orientation) ImageToDraw {
-	return b.arrow(arrowYesNorthIdx, x, y, o)
+func (b CircuitBoardRenderer) ArrowYes(x, y int, o Orientation, active bool) ImageToDraw {
+	return b.arrow(arrowYesNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) ArrowNo(x, y int, o Orientation) ImageToDraw {
-	return b.arrow(arrowNoNorthIdx, x, y, o)
+func (b CircuitBoardRenderer) ArrowNo(x, y int, o Orientation, active bool) ImageToDraw {
+	return b.arrow(arrowNoNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) imageByIndex(i int, x, y int) ImageToDraw {
+func (b CircuitBoardRenderer) imageByIndex(i int, x, y int, active bool) ImageToDraw {
 	opts := ebiten.DrawImageOptions{}
 	b.chips.Anchor(&opts.GeoM)
 	opts.GeoM.Translate((float64(x)+0.5)*b.width, (float64(y)+0.5)*b.height)
 	return ImageToDraw{
-		Image:   b.chips.GetImage(i, 0),
+		Image:   b.chips.GetImage(i, activeFrame(active)),
 		Options: &opts,
 		Z:       chipZ,
 	}
 }
 
-func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o Orientation) ImageToDraw {
+func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o Orientation, active bool) ImageToDraw {
 	// log.Printf("Arrow %d, x=%d, y=%d, o=%d", baseIdx, x, y, o)
 	i := baseIdx + int(o)
 	v := o.VelocityForward()
@@ -75,10 +75,17 @@ func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o Orientation) ImageT
 		(float64(y)+0.5*(1+float64(v.Dy)))*b.height,
 	)
 	return ImageToDraw{
-		Image:   b.chips.GetImage(i, 0),
+		Image:   b.chips.GetImage(i, activeFrame(active)),
 		Options: &opts,
 		Z:       arrowZ,
 	}
+}
+
+func activeFrame(active bool) int {
+	if active {
+		return 1
+	}
+	return 0
 }
 
 var chipType2imageIdx = map[ChipType]int{

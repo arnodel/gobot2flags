@@ -93,6 +93,7 @@ type Game struct {
 	board                       *CircuitBoard
 	chipSelector                *boardTiles
 	controller                  *ManualController
+	boardController             *BoardController
 	mainWindow                  *Window
 	controlsWindow              *Window
 	gameControlSelector         *gameControlSelector
@@ -100,16 +101,9 @@ type Game struct {
 }
 
 func (g *Game) Update() error {
-	g.count++
-	if g.maze.robot.CurrentCommand != NoCommand {
-		g.step = (g.step + 1) % 60
-	}
-	if g.step == 0 {
-		g.controller.UpdateNextCommand()
-		if g.controller.GetSwitch() {
-			g.showBoard = !g.showBoard
-		}
-		g.maze.AdvanceRobot(g.controller.NextCommand())
+	g.controller.UpdateNextCommand()
+	if g.controller.GetSwitch() {
+		g.showBoard = !g.showBoard
 	}
 	screenRect := image.Rect(0, 0, g.outsideWidth, g.outsideHeight)
 	if g.showBoard {
@@ -136,6 +130,26 @@ func (g *Game) Update() error {
 		}
 		g.mainWindow.Center()
 	} else {
+		var adv int
+		switch g.gameControlSelector.selectedControl {
+		case NoControl:
+			// Paused
+		case Play:
+			adv = 1
+		case FastForward:
+			adv = 5 - g.step%5
+		case Rewind:
+			g.boardController = newBoardController(g.board, g.maze.Clone())
+			g.gameControlSelector.selectedControl = NoControl
+		}
+		if adv > 0 {
+			g.count++
+			g.step = (g.step + adv) % 60
+			if g.step == 0 {
+				g.boardController.maze.AdvanceRobot(g.boardController.NextCommand())
+			}
+		}
+
 		r1, r2 := hSplit(screenRect, 64)
 		const scale = 2
 
@@ -222,7 +236,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) drawMaze(screen *ebiten.Image) {
 	g.gameControlSelector.Draw(g.controlsWindow.Canvas(screen))
-	g.maze.Draw(g.mainWindow.Canvas(screen), g.mazeRenderer, float64(g.step)/60, g.count/60)
+	g.boardController.maze.Draw(g.mainWindow.Canvas(screen), g.mazeRenderer, float64(g.step)/60, g.count/60)
 }
 
 func (g *Game) drawBoard(screen *ebiten.Image) {
@@ -279,13 +293,14 @@ func main() {
 		flag:       NewSprite(resources.GetImage("greenflag.png"), frameWidth, frameHeight, 10, 28),
 	}
 	game := &Game{
-		maze:          maze,
-		mazeRenderer:  mazeRenderer,
-		board:         board,
-		boardRenderer: &boardRenderer,
-		controller:    &ManualController{},
-		showBoard:     true,
-		chipSelector:  new(boardTiles),
+		maze:            maze,
+		mazeRenderer:    mazeRenderer,
+		board:           board,
+		boardRenderer:   &boardRenderer,
+		controller:      &ManualController{},
+		boardController: newBoardController(board, maze.Clone()),
+		showBoard:       true,
+		chipSelector:    new(boardTiles),
 		gameControlSelector: &gameControlSelector{
 			controlImages: NewSprite(resources.GetImage("gamecontrols.png"), 32, 32, 16, 16),
 		},

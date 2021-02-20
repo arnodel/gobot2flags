@@ -150,6 +150,17 @@ func (b *CircuitBoard) SetChipAt(x, y int, c Chip) {
 	b.chips[b.chipIndex(x, y)] = c
 }
 
+func (b *CircuitBoard) ClearActiveChips() {
+	for i, c := range b.chips {
+		b.chips[i] = c.ClearActive()
+	}
+}
+
+func (b *CircuitBoard) ActivateChip(x, y int, o Orientation) {
+	c := &b.chips[b.chipIndex(x, y)]
+	*c = c.Activate(o)
+}
+
 func (b *CircuitBoard) deleteArrow(p Position, o Orientation) {
 	b.chips[b.chipIndex(p.X, p.Y)] = b.ChipAt(p.X, p.Y).ClearArrow(o)
 }
@@ -162,7 +173,7 @@ func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
 	// Draw the background
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			c.Draw(r.Background(x, y))
+			c.Draw(r.Background(x, y, false))
 		}
 	}
 
@@ -172,13 +183,13 @@ func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
 			chip := b.ChipAt(x, y)
 			if o, ok := chip.ArrowYes(); ok {
 				if chip.IsTest() {
-					c.Draw(r.ArrowYes(x, y, o))
+					c.Draw(r.ArrowYes(x, y, o, chip.IsArrowActive(o)))
 				} else {
-					c.Draw(r.Arrow(x, y, o))
+					c.Draw(r.Arrow(x, y, o, chip.IsArrowActive(o)))
 				}
 			}
 			if o, ok := chip.ArrowNo(); ok && chip.IsTest() {
-				c.Draw(r.ArrowNo(x, y, o))
+				c.Draw(r.ArrowNo(x, y, o, chip.IsArrowActive(o)))
 			}
 		}
 	}
@@ -188,7 +199,7 @@ func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
 		for x := 0; x < w; x++ {
 			chip := b.ChipAt(x, y)
 			if chip.Type() != NoChip {
-				c.Draw(r.Chip(chip.Type(), x, y))
+				c.Draw(r.Chip(chip.Type(), x, y, chip.IsActive()))
 			}
 		}
 	}

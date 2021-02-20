@@ -3,12 +3,13 @@ package main
 type Chip uint16
 
 func (c Chip) Type() ChipType {
-	return ChipType(c & 0xff)
+	return ChipType(c & 0xf)
 }
 
 func (c Chip) IsTest() bool {
-	return c&0x10 != 0
+	return c.Type().IsDecision()
 }
+
 func (c Chip) ArrowYes() (Orientation, bool) {
 	data := (c >> 8) & 0xf
 	return Orientation(data & 0x3), (data & 0x4) != 0
@@ -27,7 +28,7 @@ func (c Chip) Arrow(ok bool) (Orientation, bool) {
 }
 
 func (c Chip) WithType(t ChipType) Chip {
-	return (c &^ 0xff) | Chip(t)
+	return (c &^ 0xf) | Chip(t)
 }
 
 func (c Chip) ClearArrowYes() Chip {
@@ -36,6 +37,10 @@ func (c Chip) ClearArrowYes() Chip {
 
 func (c Chip) ClearArrowNo() Chip {
 	return c &^ 0xf000
+}
+
+func (c Chip) ClearActive() Chip {
+	return c &^ 0xf0
 }
 
 func (c Chip) WithArrowYes(o Orientation) Chip {
@@ -72,6 +77,18 @@ func (c Chip) WithArrow(o Orientation, a ArrowType) Chip {
 	}
 }
 
+func (c Chip) IsActive() bool {
+	return (c & 0xf0) != 0
+}
+
+func (c Chip) IsArrowActive(o Orientation) bool {
+	return c.IsActive() && Orientation((c&0xf0)>>5) == o
+}
+
+func (c Chip) Activate(o Orientation) Chip {
+	return c.ClearActive() | Chip(o)<<5 | 0x10
+}
+
 func (c Chip) Command(floorColor Color, wallAhead bool) (Command, bool) {
 	switch c.Type() {
 	case StartChip:
@@ -97,7 +114,7 @@ func (c Chip) Command(floorColor Color, wallAhead bool) (Command, bool) {
 	case IsFloorYellowChip:
 		return NoCommand, floorColor == Yellow
 	default:
-		return NoCommand, false
+		return NoCommand, true
 	}
 }
 
@@ -113,14 +130,14 @@ const (
 	PaintYellowChip
 	PaintBlueChip
 
-	IsWallAheadChip = iota + 0x10
+	IsWallAheadChip
 	IsFloorRedChip
 	IsFloorYellowChip
 	IsFloorBlueChip
 )
 
 func (t ChipType) IsDecision() bool {
-	return t >= 0x10
+	return t >= IsWallAheadChip
 }
 
 type ArrowType byte
