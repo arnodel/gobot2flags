@@ -1,6 +1,8 @@
 package main
 
 import (
+	"image"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -26,6 +28,10 @@ type boardTiles struct {
 var arrowTypes = []ArrowType{
 	ArrowYes,
 	ArrowNo,
+}
+
+func (b *boardTiles) Bounds() image.Rectangle {
+	return image.Rect(0, 0, (len(arrowTypes)+len(chipTypes))*24, 32)
 }
 
 func (b *boardTiles) Draw(c Canvas, chips ChipRenderer) {

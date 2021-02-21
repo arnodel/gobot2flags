@@ -1,6 +1,10 @@
 package main
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"image"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
 
 type GameControl int
 
@@ -22,6 +26,10 @@ var gameControl2imageIdx = map[GameControl]int{
 type gameControlSelector struct {
 	selectedControl GameControl
 	controlImages   *Sprite
+}
+
+func (g *gameControlSelector) Bounds() image.Rectangle {
+	return image.Rect(0, 0, 24*len(gameControls), 32)
 }
 
 func (g *gameControlSelector) Draw(c Canvas) {

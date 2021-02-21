@@ -18,6 +18,27 @@ const (
 	PaintYellow
 )
 
+func (c Command) String() string {
+	switch c {
+	case NoCommand:
+		return "no command"
+	case TurnLeft:
+		return "turn left"
+	case TurnRight:
+		return "turn right"
+	case MoveForward:
+		return "move forward"
+	case PaintRed:
+		return "paint floor red"
+	case PaintBlue:
+		return "paint floor blue"
+	case PaintYellow:
+		return "paint floor yellow"
+	default:
+		return "unknown"
+	}
+}
+
 type ManualController struct {
 	nextCommand  Command
 	spacePressed bool
@@ -76,6 +97,7 @@ func (c *BoardController) NextCommand() Command {
 		wallAhead  = c.maze.HasWallAt(pos.X, pos.Y, c.robot.Orientation)
 		floorColor = c.maze.CellAt(pos.X, pos.Y).Color()
 	)
+	log.Printf("Robot at %s, facing %s", c.robot.Position, c.robot.Orientation)
 	for {
 		var (
 			chip            = c.board.ChipAt(c.boardPos.X, c.boardPos.Y)
@@ -88,7 +110,7 @@ func (c *BoardController) NextCommand() Command {
 		} else {
 			c.boardPos = c.board.startPos
 		}
-		log.Printf("board -> %v, com: %v", c.boardPos, com)
+		log.Printf("Board -> %s, com: %s", c.boardPos, com)
 		if com != NoCommand || c.board.ChipAt(c.boardPos.X, c.boardPos.Y).IsActive() {
 			return com
 		}

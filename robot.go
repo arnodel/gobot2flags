@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type Mover struct {
 	Orientation
@@ -18,7 +21,35 @@ const (
 	West
 )
 
+func (o Orientation) String() string {
+	switch o {
+	case North:
+		return "north"
+	case East:
+		return "east"
+	case South:
+		return "south"
+	case West:
+		return "west"
+	default:
+		return "unknown"
+	}
+}
+
 type Rotation int
+
+func (r Rotation) String() string {
+	switch r {
+	case Left:
+		return "left"
+	case Right:
+		return "right"
+	case NoRotation:
+		return "no rotation"
+	default:
+		return "unknown"
+	}
+}
 
 func (r Rotation) DegreesAt(t float64) float64 {
 	return float64(r) * (math.Pi / 2) * t
@@ -36,6 +67,10 @@ type Position struct {
 
 func (p Position) Coords() (float64, float64) {
 	return float64(p.X), float64(p.Y)
+}
+
+func (p Position) String() string {
+	return fmt.Sprintf("(%d, %d)", p.X, p.Y)
 }
 
 type Velocity struct {

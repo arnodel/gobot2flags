@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"image"
 	"log"
 	"strings"
 )
@@ -263,6 +264,10 @@ func MazeFromString(s string) (*Maze, error) {
 		}
 	}
 	return maze, nil
+}
+
+func (m *Maze) Bounds() image.Rectangle {
+	return image.Rect(-16, -16, 32*m.width+16, 32*m.height+16)
 }
 
 func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {

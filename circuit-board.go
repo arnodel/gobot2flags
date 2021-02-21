@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"image"
 	"strings"
 )
 
@@ -163,6 +164,10 @@ func (b *CircuitBoard) ActivateChip(x, y int, o Orientation) {
 
 func (b *CircuitBoard) deleteArrow(p Position, o Orientation) {
 	b.chips[b.chipIndex(p.X, p.Y)] = b.ChipAt(p.X, p.Y).ClearArrow(o)
+}
+
+func (b *CircuitBoard) Bounds() image.Rectangle {
+	return image.Rect(0, 0, b.width*32, b.height*32)
 }
 
 func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {

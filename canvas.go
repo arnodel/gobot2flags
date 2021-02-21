@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -9,6 +10,7 @@ import (
 type Canvas interface {
 	DrawImage(img *ebiten.Image, options *ebiten.DrawImageOptions)
 	Draw(ImageToDraw)
+	Fill(color.Color)
 }
 
 type transformCanvas struct {
@@ -50,4 +52,8 @@ func (s *transformCanvas) CursorPosition() (float64, float64) {
 	inv := s.baseGeoM
 	inv.Invert()
 	return inv.Apply(float64(x), float64(y))
+}
+
+func (s *transformCanvas) Fill(c color.Color) {
+	s.target.Fill(c)
 }
