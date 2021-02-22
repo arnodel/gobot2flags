@@ -313,14 +313,14 @@ func main() {
 	flag.StringVar(&levelFile, "level", "", "path to r2f level file")
 	flag.Parse()
 	var levelString = `
-	+--+--+--+--+
-	|RF|R |R  RF|
-	+  .  .  .  +
-	|Y  B> Y  B |
-	+--+--+  +  +
-	|BF Y  B |YF|
-	+--+--+--+--+	
-	`
++--+--+--+--+
+|RF|R |R  RF|
++  .  .  .  +
+|Y  B> Y  B |
++--+--+  +  +
+|BF Y  B |YF|
++--+--+--+--+	
+`
 	if levelFile != "" {
 		levelBytes, err := ioutil.ReadFile(levelFile)
 		if err != nil {
