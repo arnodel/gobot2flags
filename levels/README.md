@@ -48,3 +48,5 @@ Example where two `+` intersect and there is a wall:
 +--+--+
 ```
 Also there needs to be an odd number of lines.
+
+*Please note that the String to Level converter will throw an error if you have inculded any 'Carriage Return' characters, so please omit them.*
