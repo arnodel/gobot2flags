@@ -8,7 +8,7 @@ import (
 	"log"
 	"math"
 
-	"github.com/arnodel/gobots2flags/resources"
+	"github.com/arnodel/gobot2flags/resources"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
