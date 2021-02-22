@@ -1,4 +1,4 @@
-module github.com/arnodel/gobots2flags
+module github.com/arnodel/gobot2flags
 
 go 1.16
 
