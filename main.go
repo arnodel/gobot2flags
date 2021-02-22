@@ -36,17 +36,26 @@ const (
 )
 
 type PointerTracker struct {
-	startPos   image.Point
-	lastPos    image.Point
-	currentPos image.Point
-	status     PointerStatus
-	frames     int
+	startPos    image.Point
+	lastPos     image.Point
+	currentPos  image.Point
+	status      PointerStatus
+	frames      int
+	cancelTouch bool
+}
+
+func (p *PointerTracker) CancelTouch() {
+	p.cancelTouch = true
+	p.status = NoTouch
 }
 
 func (p *PointerTracker) Update() {
 	x, y := ebiten.CursorPosition()
 	currentPos := image.Point{x, y}
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		if p.cancelTouch {
+			return
+		}
 		switch p.status {
 		case NoTouch, TouchUp:
 			p.status = TouchDown
@@ -68,6 +77,7 @@ func (p *PointerTracker) Update() {
 		}
 		p.currentPos = currentPos
 	} else {
+		p.cancelTouch = false
 		switch p.status {
 		case NoTouch:
 			// Nothing to do?
@@ -126,7 +136,7 @@ func (g *Game) Update() error {
 	mtr.Scale(1+g.proportion, 1+g.proportion)
 
 	// board
-	br1, br2 := hSplit(br, 64)
+	br1, br2 := hSplit(br, 128)
 
 	g.boardControlsWindow = centeredWindow(br1, g.chipSelector.Bounds(), btr)
 	g.boardWindow = centeredWindow(br2, g.board.Bounds(), btr)
@@ -136,8 +146,10 @@ func (g *Game) Update() error {
 	switch g.gameControlSelector.selectedControl {
 	case NoControl:
 		// Paused
-	case Play:
+	case Play, Step:
 		adv = 1
+		g.playing = true
+	case Pause:
 		g.playing = true
 	case FastForward:
 		adv = 5 - g.step%5
@@ -148,11 +160,15 @@ func (g *Game) Update() error {
 		g.gameControlSelector.selectedControl = NoControl
 		g.playing = false
 	}
+	if g.playing && g.gameControlSelector.selectedControl != Pause && g.step%60 == 0 {
+		g.step = 0
+		g.boardController.maze.AdvanceRobot(g.boardController.NextCommand())
+	}
 	if adv > 0 {
 		g.count++
-		g.step = (g.step + adv) % 60
-		if g.step == 0 {
-			g.boardController.maze.AdvanceRobot(g.boardController.NextCommand())
+		g.step += adv
+		if g.step == 60 && g.gameControlSelector.selectedControl == Step {
+			g.gameControlSelector.selectedControl = Pause
 		}
 	}
 
@@ -163,76 +179,92 @@ func (g *Game) Update() error {
 
 	g.pointer.Update()
 
-	consumedTouchDown := false
 	if g.pointer.status == TouchDown {
 		if g.boardWindow.Contains(g.pointer.currentPos) && !g.showBoard {
 			g.showBoard = true
-			consumedTouchDown = true
+			g.pointer.CancelTouch()
 		} else if g.mazeWindow.Contains(g.pointer.currentPos) && g.showBoard {
 			g.showBoard = false
-			consumedTouchDown = true
+			g.pointer.CancelTouch()
 		}
 	}
 
-	if !consumedTouchDown && adv == 0 {
+	if !g.playing {
 		g.updateBoard()
 	}
-	if !consumedTouchDown {
-		g.updateMaze()
-	}
+	g.updateMaze()
 	return nil
 }
 
 func (g *Game) updateBoard() {
+	cur := g.pointer.currentPos
 	switch g.pointer.status {
+	case TouchDown:
+		if g.boardControlsWindow.Contains(cur) {
+			xx, yy := g.boardControlsWindow.Coords(cur)
+			g.chipSelector.Click(xx, yy)
+		} else if g.chipSelector.selectedType == NoChip {
+			return
+		} else if cx, cy, cok := g.slotCoords(cur); cok {
+			newChip := g.board.ChipAt(cx, cy).WithType(g.chipSelector.selectedType)
+			g.board.SetChipAt(cx, cy, newChip)
+		}
 	case TouchUp:
-
-		if g.pointer.frames > 0 {
-			cur := g.pointer.currentPos
-			if g.boardControlsWindow.Contains(cur) {
-				xx, yy := g.boardControlsWindow.Coords(cur)
-				g.chipSelector.Click(xx, yy)
-			} else if g.boardWindow.Contains(cur) {
-				xx, yy := g.boardWindow.Coords(cur)
-				sx, sy := g.boardRenderer.GetSlotCoords(xx, yy)
-				if g.board.Contains(sx, sy) {
-					newChip := g.board.ChipAt(sx, sy).WithType(g.chipSelector.selectedType)
-					g.board.SetChipAt(sx, sy, newChip)
-				}
-			}
+		if g.chipSelector.selectedIcon != EraserIcon {
+			return
+		}
+		cx, cy, cok := g.slotCoords(cur)
+		sx, sy, sok := g.slotCoords(g.pointer.startPos)
+		if cok && sok && cx == sx && cy == sy {
+			newChip := g.board.ChipAt(cx, cy).WithType(NoChip)
+			g.board.SetChipAt(cx, cy, newChip)
 		}
 	case Dragging:
-		last := g.pointer.lastPos
-		cur := g.pointer.currentPos
-		if g.boardWindow.Contains(last) && g.boardWindow.Contains(cur) {
-			xx1, yy1 := g.boardWindow.Coords(last)
-			xx2, yy2 := g.boardWindow.Coords(cur)
-			sx1, sy1 := g.boardRenderer.GetSlotCoords(xx1, yy1)
-			sx2, sy2 := g.boardRenderer.GetSlotCoords(xx2, yy2)
-			if g.board.Contains(sx1, sy1) && g.board.Contains(sx2, sy2) {
-				o, ok := Velocity{Dx: sx2 - sx1, Dy: sy2 - sy1}.Orientation()
-				if ok {
-					oldChip := g.board.ChipAt(sx1, sy1)
-					newChip := oldChip.WithArrow(o, g.chipSelector.selectedArrowType)
-					if g.chipSelector.selectedArrowType == ArrowNo && newChip != oldChip {
-						g.chipSelector.selectedArrowType = ArrowYes
-					}
-					g.board.SetChipAt(sx1, sy1, newChip)
+		if g.chipSelector.selectedArrowType == NoArrow && g.chipSelector.selectedIcon != EraserIcon {
+			return
+		}
+		cx, cy, cok := g.slotCoords(cur)
+		lx, ly, lok := g.slotCoords(g.pointer.lastPos)
+		if cok && lok {
+			o, ok := Velocity{Dx: cx - lx, Dy: cy - ly}.Orientation()
+			if ok {
+				g.pointer.startPos = g.pointer.lastPos // This is so we don't erase chips by doing loops
+				oldChip := g.board.ChipAt(lx, ly)
+				newChip := oldChip.WithArrow(o, g.chipSelector.selectedArrowType)
+				if g.chipSelector.selectedArrowType == ArrowNo && newChip != oldChip {
+					g.chipSelector.selectedArrowType = ArrowYes
+				}
+				g.board.SetChipAt(lx, ly, newChip)
+
+				// When erasing, also erase the other way
+				if g.chipSelector.selectedIcon == EraserIcon {
+					newChip := g.board.ChipAt(cx, cy).ClearArrow(o.Reverse())
+					g.board.SetChipAt(cx, cy, newChip)
 				}
 			}
 		}
 	}
 }
 
+func (g *Game) slotCoords(p image.Point) (int, int, bool) {
+	if !g.boardWindow.Contains(p) {
+		return 0, 0, false
+	}
+	xx, yy := g.boardWindow.Coords(p)
+	sx, sy := g.boardRenderer.GetSlotCoords(xx, yy)
+	if !g.board.Contains(sx, sy) {
+		return 0, 0, false
+	}
+	return sx, sy, true
+}
+
 func (g *Game) updateMaze() {
 	switch g.pointer.status {
-	case TouchUp:
-		if g.pointer.frames > 0 {
-			cur := g.pointer.currentPos
-			if g.mazeControlsWindow.Contains(cur) {
-				xx, yy := g.mazeControlsWindow.Coords(cur)
-				g.gameControlSelector.Click(xx, yy)
-			}
+	case TouchDown:
+		cur := g.pointer.currentPos
+		if g.mazeControlsWindow.Contains(cur) {
+			xx, yy := g.mazeControlsWindow.Coords(cur)
+			g.gameControlSelector.Click(xx, yy)
 		}
 	}
 }
@@ -280,14 +312,24 @@ func main() {
 	var levelFile string
 	flag.StringVar(&levelFile, "level", "", "path to r2f level file")
 	flag.Parse()
-	if levelFile == "" {
-		log.Fatal("please provide a level file")
+	var levelString = `
+	+--+--+--+--+
+	|RF|R |R  RF|
+	+  .  .  .  +
+	|Y  B> Y  B |
+	+--+--+  +  +
+	|BF Y  B |YF|
+	+--+--+--+--+	
+	`
+	if levelFile != "" {
+		levelBytes, err := ioutil.ReadFile(levelFile)
+		if err != nil {
+			log.Fatal("Could not open level file:", err)
+		}
+		levelString = string(levelBytes)
 	}
-	levelBytes, err := ioutil.ReadFile(levelFile)
-	if err != nil {
-		log.Fatal("Could not open level file:", err)
-	}
-	maze, err := MazeFromString(string(levelBytes))
+
+	maze, err := MazeFromString(levelString)
 	if err != nil {
 		log.Fatalf("Could not create maze: %s", err)
 	}
@@ -313,6 +355,7 @@ func main() {
 		robot:      NewSprite(resources.GetImage("robot.png"), frameWidth, frameHeight, 16, 16),
 		flag:       NewSprite(resources.GetImage("greenflag.png"), frameWidth, frameHeight, 10, 28),
 	}
+	icons := Icons{NewSprite(resources.GetImage("icons.png"), 32, 32, 16, 16)}
 	game := &Game{
 		maze:            maze,
 		mazeRenderer:    mazeRenderer,
@@ -321,10 +364,11 @@ func main() {
 		controller:      &ManualController{},
 		boardController: newBoardController(board, maze.Clone()),
 		showBoard:       true,
-		chipSelector:    new(boardTiles),
-		gameControlSelector: &gameControlSelector{
-			controlImages: NewSprite(resources.GetImage("gamecontrols.png"), 32, 32, 16, 16),
+		chipSelector: &boardTiles{
+			selectedType: StartChip,
+			icons:        icons,
 		},
+		gameControlSelector: &gameControlSelector{icons: icons},
 	}
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Gobot 2 Flags")
@@ -332,4 +376,26 @@ func main() {
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
+}
+
+type IconType int
+
+const (
+	PlayIcon IconType = iota
+	StepIcon
+	FastForwardIcon
+	RewindIcon
+	PauseIcon
+	TrashCanIcon
+	EraserIcon
+)
+
+const NoIcon IconType = -1
+
+type Icons struct {
+	*Sprite
+}
+
+func (i Icons) Get(tp IconType) *ebiten.Image {
+	return i.GetImage(int(tp), 0)
 }

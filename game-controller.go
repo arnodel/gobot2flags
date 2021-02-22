@@ -13,19 +13,16 @@ const (
 	Play
 	FastForward
 	Rewind
+	Pause
+	Step
 )
 
-var gameControls = []GameControl{Rewind, Play, FastForward}
-
-var gameControl2imageIdx = map[GameControl]int{
-	Play:        0,
-	FastForward: 1,
-	Rewind:      2,
-}
+var gameControls = []GameControl{Rewind, Play, Step, Pause, FastForward}
+var gameControlIcons = []IconType{RewindIcon, PlayIcon, StepIcon, PauseIcon, FastForwardIcon}
 
 type gameControlSelector struct {
 	selectedControl GameControl
-	controlImages   *Sprite
+	icons           Icons
 }
 
 func (g *gameControlSelector) Bounds() image.Rectangle {
@@ -34,9 +31,9 @@ func (g *gameControlSelector) Bounds() image.Rectangle {
 
 func (g *gameControlSelector) Draw(c Canvas) {
 	for i, gc := range gameControls {
-		img := g.controlImages.GetImage(gameControl2imageIdx[gc], 0)
+		img := g.icons.Get(gameControlIcons[i])
 		var opts ebiten.DrawImageOptions
-		g.controlImages.Anchor(&opts.GeoM)
+		g.icons.Anchor(&opts.GeoM)
 		if g.selectedControl != gc {
 			opts.GeoM.Scale(0.5, 0.5)
 		}
