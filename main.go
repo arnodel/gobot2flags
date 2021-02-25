@@ -52,32 +52,11 @@ func (p *PointerTracker) CancelTouch() {
 }
 
 func (p *PointerTracker) Update() {
-	x, y := ebiten.CursorPosition()
-	currentPos := image.Point{x, y}
+	var currentPos image.Point
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		if p.cancelTouch {
-			return
-		}
-		switch p.status {
-		case NoTouch, TouchUp:
-			p.status = TouchDown
-			p.startPos = currentPos
-			p.lastPos = currentPos
-			p.frames = 1
-		case TouchDown:
-			p.status = Dragging
-			fallthrough
-		case Dragging:
-			if currentPos == p.lastPos && p.frames > 0 {
-				p.frames++
-			} else {
-				p.lastPos = p.currentPos
-				p.frames = 0
-			}
-		default:
-			// Shouldn't get there?
-		}
-		p.currentPos = currentPos
+		currentPos = image.Pt(ebiten.CursorPosition())
+	} else if touchIDs := ebiten.TouchIDs(); touchIDs != nil {
+		currentPos = image.Pt(ebiten.TouchPosition(touchIDs[0]))
 	} else {
 		p.cancelTouch = false
 		switch p.status {
@@ -85,16 +64,37 @@ func (p *PointerTracker) Update() {
 			// Nothing to do?
 		case TouchDown, Dragging:
 			p.status = TouchUp
-			if currentPos == p.lastPos && p.frames > 0 {
-				p.frames++
-			} else {
-				p.lastPos = p.currentPos
-				p.frames = 0
-			}
+			p.lastPos = p.currentPos
+			p.frames = 0
 		case TouchUp:
 			p.status = NoTouch
 		}
+		return
 	}
+	if p.cancelTouch {
+		return
+	}
+	switch p.status {
+	case NoTouch, TouchUp:
+		p.status = TouchDown
+		p.startPos = currentPos
+		p.lastPos = currentPos
+		p.frames = 1
+	case TouchDown:
+		p.status = Dragging
+		fallthrough
+	case Dragging:
+		if currentPos == p.lastPos && p.frames > 0 {
+			p.frames++
+		} else {
+			p.lastPos = p.currentPos
+			p.frames = 0
+		}
+	default:
+		// Shouldn't get there?
+	}
+	p.currentPos = currentPos
+	return
 }
 
 type Game struct {
