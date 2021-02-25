@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"image"
+	"image/color"
 	_ "image/png"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/arnodel/gobot2flags/resources"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 const (
@@ -124,7 +126,7 @@ func (g *Game) Update() error {
 	}
 	screenRect := image.Rect(0, 0, g.outsideWidth, g.outsideHeight)
 	var mr, br image.Rectangle
-	var mtr, btr ebiten.GeoM
+	var tr, mtr, btr ebiten.GeoM
 	const scale = 2
 	if g.showBoard {
 		g.proportion = math.Max(0, g.proportion-0.1)
@@ -132,14 +134,17 @@ func (g *Game) Update() error {
 		g.proportion = math.Min(1, g.proportion+0.1)
 	}
 	mr, br = vSplit(screenRect, int(float64(g.outsideWidth)*(1+g.proportion)/3))
+	tr.Scale(2, 2)
 	btr.Scale(2-g.proportion, 2-g.proportion)
 	mtr.Scale(1+g.proportion, 1+g.proportion)
 
 	// board
 	br1, br2 := hSplit(br, 128)
 
-	g.boardControlsWindow = centeredWindow(br1, g.chipSelector.Bounds(), btr)
+	g.boardControlsWindow = centeredWindow(br1, g.chipSelector.Bounds(), tr)
 	g.boardWindow = centeredWindow(br2, g.board.Bounds(), btr)
+
+	//gameWon := g.boardController.GameWon()
 
 	// maze
 	var adv int
@@ -162,7 +167,7 @@ func (g *Game) Update() error {
 	}
 	if g.playing && g.gameControlSelector.selectedControl != Pause && g.step%60 == 0 {
 		g.step = 0
-		g.boardController.maze.AdvanceRobot(g.boardController.NextCommand())
+		g.boardController.Advance()
 	}
 	if adv > 0 {
 		g.count++
@@ -174,7 +179,7 @@ func (g *Game) Update() error {
 
 	mr1, mr2 := hSplit(mr, 64)
 
-	g.mazeControlsWindow = centeredWindow(mr1, g.gameControlSelector.Bounds(), mtr)
+	g.mazeControlsWindow = centeredWindow(mr1, g.gameControlSelector.Bounds(), tr)
 	g.mazeWindow = centeredWindow(mr2, g.maze.Bounds(), mtr)
 
 	g.pointer.Update()
@@ -272,6 +277,7 @@ func (g *Game) updateMaze() {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
 	g.drawMaze(screen)
+	text.Draw(screen, "robot2flags", msgFont, 10, g.outsideHeight-10, color.White)
 }
 
 func (g *Game) drawMaze(screen *ebiten.Image) {

@@ -67,9 +67,10 @@ func (c Cell) Captured() bool {
 }
 
 type Maze struct {
-	width, height int
-	cells         []Cell
-	robot         *Robot
+	width, height   int
+	cells           []Cell
+	robot           *Robot
+	flags, captured int
 }
 
 func NewMaze(width, height int) *Maze {
@@ -85,6 +86,8 @@ func (m *Maze) Clone() *Maze {
 	copy(clone.cells, m.cells)
 	robot := *m.robot
 	clone.robot = &robot
+	clone.flags = m.flags
+	clone.captured = m.captured
 	return clone
 }
 
@@ -103,7 +106,28 @@ func (m *Maze) cellIndex(x, y int) int {
 }
 
 func (m *Maze) UpdateCellAt(x, y int, c Cell) {
-	m.cells[m.cellIndex(x, y)] |= c
+	p := &m.cells[m.cellIndex(x, y)]
+	c0c := *p &^ c
+	cc0 := c &^ *p
+	if c0c.Flag() {
+		m.flags--
+	} else if cc0.Flag() {
+		m.flags++
+	}
+	if c0c.Captured() {
+		m.captured--
+	} else if cc0.Captured() {
+		m.captured++
+	}
+	*p |= c
+}
+
+func (m *Maze) FlagsCaptured() int {
+	return m.captured
+}
+
+func (m *Maze) FlagsRemaining() int {
+	return m.flags
 }
 
 func (m *Maze) CellAt(x, y int) Cell {

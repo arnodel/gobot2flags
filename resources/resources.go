@@ -3,12 +3,13 @@ package resources
 import (
 	"embed"
 	"image"
-	"log"
+	"io/ioutil"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"golang.org/x/image/font/opentype"
 )
 
-//go:embed images
+//go:embed images fonts
 var resources embed.FS
 
 // GetImage loads an image from the embedded filesystem and converts it to an
@@ -20,8 +21,24 @@ func GetImage(name string) *ebiten.Image {
 	}
 	img, _, err := image.Decode(f)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	eimg := ebiten.NewImageFromImage(img)
 	return eimg
+}
+
+func GetFont(name string) *opentype.Font {
+	f, err := resources.Open("fonts/" + name)
+	if err != nil {
+		panic(err)
+	}
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+	font, err := opentype.Parse(data)
+	if err != nil {
+		panic(err)
+	}
+	return font
 }

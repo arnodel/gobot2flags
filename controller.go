@@ -90,6 +90,19 @@ func newBoardController(board *CircuitBoard, maze *Maze) *BoardController {
 	}
 }
 
+func (c *BoardController) GameWon() bool {
+	return c.maze.FlagsRemaining() == 0
+}
+
+func (c *BoardController) Advance() {
+	if c.GameWon() {
+		log.Printf("Game won!")
+		c.board.ClearActiveChips()
+		return
+	}
+	c.maze.AdvanceRobot(c.NextCommand())
+}
+
 func (c *BoardController) NextCommand() Command {
 	c.board.ClearActiveChips()
 	var (
