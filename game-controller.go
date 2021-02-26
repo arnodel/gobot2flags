@@ -45,10 +45,6 @@ func (g *gameControlSelector) Draw(c Canvas) {
 func (g *gameControlSelector) Click(x, y float64) {
 	idx := int(x / 24)
 	if idx >= 0 && idx < len(gameControls) {
-		selectedControl := gameControls[idx]
-		if selectedControl == g.selectedControl {
-			selectedControl = NoControl
-		}
-		g.selectedControl = selectedControl
+		g.selectedControl = gameControls[idx]
 	}
 }

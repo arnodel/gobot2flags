@@ -11,6 +11,7 @@ type CircuitBoard struct {
 	width, height int
 	chips         []Chip
 	startPos      Position
+	hasStartPos   bool
 }
 
 func NewCircuitBoard(width, height int) *CircuitBoard {
@@ -46,7 +47,7 @@ func CircuitBoardFromString(s string) (*CircuitBoard, error) {
 		return nil, errors.New("wrong length for line 1")
 	}
 	b := NewCircuitBoard(width, height)
-	hasStartPos := false
+	b.hasStartPos = false
 	for i, row := range rows {
 		y := i / 2
 		if i%2 == 0 {
@@ -60,11 +61,11 @@ func CircuitBoardFromString(s string) (*CircuitBoard, error) {
 					return nil, fmt.Errorf("invalid chip code at line %d, column %d: %q", i+1, x*6+1, chipCode)
 				}
 				if chipType == StartChip {
-					if hasStartPos {
+					if b.hasStartPos {
 						return nil, fmt.Errorf("Only one start chip allowed: found second at line %d, column %d", i+1, x*6+1)
 					}
 					b.startPos = Position{X: x, Y: y}
-					hasStartPos = true
+					b.hasStartPos = true
 				}
 				b.SetChipAt(x, y, b.ChipAt(x, y).WithType(chipType))
 				if x == width-1 {
@@ -115,7 +116,7 @@ func CircuitBoardFromString(s string) (*CircuitBoard, error) {
 			}
 		}
 	}
-	if !hasStartPos {
+	if !b.hasStartPos {
 		return nil, errors.New("start chip missing")
 	}
 	return b, nil
@@ -123,6 +124,10 @@ func CircuitBoardFromString(s string) (*CircuitBoard, error) {
 
 func (b *CircuitBoard) chipIndex(x, y int) int {
 	return x + b.width*y
+}
+
+func (b *CircuitBoard) StartPos() (Position, bool) {
+	return b.startPos, b.hasStartPos
 }
 
 func (b *CircuitBoard) Contains(x, y int) bool {
@@ -134,12 +139,17 @@ func (b *CircuitBoard) ChipAt(x, y int) Chip {
 }
 
 func (b *CircuitBoard) SetChipAt(x, y int, c Chip) {
+	pc := &b.chips[b.chipIndex(x, y)]
 	if c.Type() == StartChip {
-		currentStart := b.ChipAt(b.startPos.X, b.startPos.Y)
-		if currentStart.Type() == StartChip {
+		if b.hasStartPos {
+			currentStart := b.ChipAt(b.startPos.X, b.startPos.Y)
 			b.chips[b.chipIndex(b.startPos.X, b.startPos.Y)] = currentStart.WithType(NoChip)
 		}
 		b.startPos = Position{x, y}
+		b.hasStartPos = true
+	} else if pc.Type() == StartChip {
+		b.hasStartPos = false
+		b.startPos = Position{}
 	}
 	p := Position{x, y}
 	if o, ok := c.ArrowYes(); ok {

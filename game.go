@@ -69,23 +69,32 @@ func (g *Game) Update() error {
 		// Paused
 	case Play, Step:
 		adv = 1
-		g.playing = true
 	case Pause:
-		g.playing = true
+		// Paused
 	case FastForward:
 		adv = 5 - g.step%5
-		g.playing = true
 	case Rewind:
-		g.board.ClearActiveChips()
-		g.boardController = newBoardController(g.board, g.maze.Clone())
-		g.gameControlSelector.selectedControl = NoControl
-		g.playing = false
+		if g.playing {
+			g.board.ClearActiveChips()
+			g.boardController = nil
+			g.playing = false
+			g.step = 0
+		}
 	}
-	if g.playing && g.gameControlSelector.selectedControl != Pause && g.step%60 == 0 {
+	if !g.playing && adv > 0 {
+		boardController := newBoardController(g.board, g.maze.Clone())
+		if boardController != nil {
+			g.boardController = boardController
+			g.playing = true
+		}
+	}
+	if !g.playing {
+		g.gameControlSelector.selectedControl = Rewind
+	} else if g.gameControlSelector.selectedControl != Pause && g.step%60 == 0 {
 		g.step = 0
 		g.boardController.Advance()
 	}
-	if adv > 0 {
+	if g.playing && adv > 0 {
 		g.count++
 		g.step += adv
 		if g.step == 60 && g.gameControlSelector.selectedControl == Step {
@@ -198,7 +207,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) drawMaze(screen *ebiten.Image) {
 	g.gameControlSelector.Draw(g.mazeControlsWindow.Canvas(screen))
-	g.boardController.maze.Draw(g.mazeWindow.Canvas(screen), g.mazeRenderer, float64(g.step)/60, g.count/60)
+	maze := g.maze
+	if g.playing {
+		maze = g.boardController.maze
+	}
+	maze.Draw(g.mazeWindow.Canvas(screen), g.mazeRenderer, float64(g.step)/60, g.count/60)
 }
 
 func (g *Game) drawBoard(screen *ebiten.Image) {

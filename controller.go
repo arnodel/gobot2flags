@@ -79,14 +79,19 @@ type BoardController struct {
 	maze     *Maze
 	robot    *Robot
 	boardPos Position
+	deadEnd  bool
 }
 
 func newBoardController(board *CircuitBoard, maze *Maze) *BoardController {
+	startPos, ok := board.StartPos()
+	if !ok {
+		return nil
+	}
 	return &BoardController{
 		board:    board,
 		maze:     maze,
 		robot:    maze.robot,
-		boardPos: board.startPos,
+		boardPos: startPos,
 	}
 }
 
@@ -104,6 +109,9 @@ func (c *BoardController) Advance() {
 }
 
 func (c *BoardController) NextCommand() Command {
+	if c.deadEnd {
+		return NoCommand
+	}
 	c.board.ClearActiveChips()
 	var (
 		pos        = c.robot.Position
@@ -120,11 +128,10 @@ func (c *BoardController) NextCommand() Command {
 		c.board.ActivateChip(c.boardPos.X, c.boardPos.Y, nextChipDir)
 		if ok {
 			c.boardPos = c.boardPos.Move(nextChipDir.VelocityForward())
-		} else {
-			c.boardPos = c.board.startPos
 		}
+		c.deadEnd = c.board.ChipAt(c.boardPos.X, c.boardPos.Y).IsActive()
 		log.Printf("Board -> %s, com: %s", c.boardPos, com)
-		if com != NoCommand || c.board.ChipAt(c.boardPos.X, c.boardPos.Y).IsActive() {
+		if com != NoCommand || c.deadEnd {
 			return com
 		}
 	}

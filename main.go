@@ -80,7 +80,10 @@ func main() {
 			selectedType: StartChip,
 			icons:        icons,
 		},
-		gameControlSelector: &gameControlSelector{icons: icons},
+		gameControlSelector: &gameControlSelector{
+			selectedControl: Rewind,
+			icons:           icons,
+		},
 	}
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Gobot 2 Flags")
