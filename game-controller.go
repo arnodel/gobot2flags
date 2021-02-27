@@ -4,6 +4,7 @@ import (
 	"image"
 
 	"github.com/arnodel/gobot2flags/engine"
+	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -19,11 +20,11 @@ const (
 )
 
 var gameControls = []GameControl{Rewind, Play, Step, Pause, FastForward}
-var gameControlIcons = []IconType{RewindIcon, PlayIcon, StepIcon, PauseIcon, FastForwardIcon}
+var gameControlIcons = []sprites.IconType{sprites.RewindIcon, sprites.PlayIcon, sprites.StepIcon, sprites.PauseIcon, sprites.FastForwardIcon}
 
 type gameControlSelector struct {
 	selectedControl GameControl
-	icons           Icons
+	icons           sprites.Icons
 }
 
 func (g *gameControlSelector) Bounds() image.Rectangle {

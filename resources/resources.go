@@ -3,6 +3,7 @@ package resources
 import (
 	"embed"
 	"image"
+	_ "image/png" // This is so that png type is registered with the image package and image.Decode() works
 	"io/ioutil"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -19,6 +20,7 @@ func GetImage(name string) *ebiten.Image {
 	if err != nil {
 		panic(err)
 	}
+
 	img, _, err := image.Decode(f)
 	if err != nil {
 		panic(err)

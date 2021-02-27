@@ -9,6 +9,7 @@ import (
 	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
 	"github.com/arnodel/gobot2flags/resources"
+	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -64,12 +65,11 @@ func main() {
 		cellHeight: frameHeight,
 		wallWidth:  wallWidth,
 		wallHeight: wallHeight,
-		walls:      NewWalls(resources.GetImage("greywalls.png")),
-		floors:     LoadFloors(resources.GetImage("floors.png")),
-		robot:      engine.NewSprite(resources.GetImage("robot.png"), frameWidth, frameHeight, 16, 16),
-		flag:       engine.NewSprite(resources.GetImage("greenflag.png"), frameWidth, frameHeight, 10, 28),
+		walls:      sprites.GreyWalls,
+		floors:     sprites.PlainFloors,
+		robot:      sprites.Robot,
+		flag:       sprites.Flag,
 	}
-	icons := Icons{engine.NewSprite(resources.GetImage("icons.png"), 32, 32, 16, 16)}
 	game := &Game{
 		maze:            maze,
 		mazeRenderer:    mazeRenderer,
@@ -79,11 +79,11 @@ func main() {
 		showBoard:       true,
 		chipSelector: &boardTiles{
 			selectedType: model.StartChip,
-			icons:        icons,
+			icons:        sprites.PlainIcons,
 		},
 		gameControlSelector: &gameControlSelector{
 			selectedControl: Rewind,
-			icons:           icons,
+			icons:           sprites.PlainIcons,
 		},
 		pointer: &engine.PointerTracker{},
 	}
@@ -93,26 +93,4 @@ func main() {
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
-}
-
-type IconType int
-
-const (
-	PlayIcon IconType = iota
-	StepIcon
-	FastForwardIcon
-	RewindIcon
-	PauseIcon
-	TrashCanIcon
-	EraserIcon
-)
-
-const NoIcon IconType = -1
-
-type Icons struct {
-	*engine.Sprite
-}
-
-func (i Icons) Get(tp IconType) *ebiten.Image {
-	return i.GetImage(int(tp), 0)
 }

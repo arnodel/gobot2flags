@@ -7,6 +7,7 @@ import (
 
 	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
+	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -130,9 +131,9 @@ func (g *Game) updateBoard() {
 			xx, yy := g.boardControlsWindow.Coords(cur)
 			g.chipSelector.Click(xx, yy)
 		} else if g.chipSelector.selectedType == model.NoChip {
-			if g.boardWindow.Contains(cur) && g.chipSelector.selectedIcon == TrashCanIcon {
+			if g.boardWindow.Contains(cur) && g.chipSelector.selectedIcon == sprites.TrashCanIcon {
 				g.board.Reset()
-				g.chipSelector.selectedIcon = NoIcon
+				g.chipSelector.selectedIcon = sprites.NoIcon
 				g.chipSelector.selectedType = model.StartChip
 			}
 		} else if cx, cy, cok := g.slotCoords(cur); cok {
@@ -140,7 +141,7 @@ func (g *Game) updateBoard() {
 			g.board.SetChipAt(cx, cy, newChip)
 		}
 	case engine.TouchUp:
-		if g.chipSelector.selectedIcon != EraserIcon {
+		if g.chipSelector.selectedIcon != sprites.EraserIcon {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
@@ -150,7 +151,7 @@ func (g *Game) updateBoard() {
 			g.board.SetChipAt(cx, cy, newChip)
 		}
 	case engine.Dragging:
-		if g.chipSelector.selectedArrowType == model.NoArrow && g.chipSelector.selectedIcon != EraserIcon {
+		if g.chipSelector.selectedArrowType == model.NoArrow && g.chipSelector.selectedIcon != sprites.EraserIcon {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
@@ -167,7 +168,7 @@ func (g *Game) updateBoard() {
 				g.board.SetChipAt(lx, ly, newChip)
 
 				// When erasing, also erase the other way
-				if g.chipSelector.selectedIcon == EraserIcon {
+				if g.chipSelector.selectedIcon == sprites.EraserIcon {
 					newChip := g.board.ChipAt(cx, cy).ClearArrow(o.Reverse())
 					g.board.SetChipAt(cx, cy, newChip)
 				}

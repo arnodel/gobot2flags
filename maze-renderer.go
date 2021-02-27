@@ -1,20 +1,19 @@
 package main
 
 import (
-	"bytes"
 	"image"
-	"log"
 
 	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
+	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type MazeRenderer struct {
 	cellWidth, cellHeight int
 	wallWidth, wallHeight int
-	walls                 Walls
-	floors                Floors
+	walls                 sprites.Walls
+	floors                sprites.Floors
 	flag, robot           *engine.Sprite
 }
 
@@ -143,44 +142,4 @@ func (r *MazeRenderer) DrawMaze(c engine.Canvas, m *model.Maze, t float64, frame
 
 	stack.Draw(c)
 	stack.Empty() // Reuse the underlying slice, same number of objects each time!
-}
-
-func subImage(img *ebiten.Image, x, y int) *ebiten.Image {
-	return img.SubImage(image.Rect(x*frameWidth, y*frameHeight, (x+1)*frameWidth, (y+1)*frameHeight)).(*ebiten.Image)
-}
-
-type Walls struct {
-	Horizontal, Vertical, Corner *ebiten.Image
-}
-
-func NewWalls(img *ebiten.Image) Walls {
-	return Walls{
-		Horizontal: img.SubImage(image.Rect(0, frameHeight, frameWidth, frameHeight+wallHeight)).(*ebiten.Image),
-		Vertical:   img.SubImage(image.Rect(0, 2*frameHeight, wallWidth, 3*frameHeight)).(*ebiten.Image),
-		Corner:     img.SubImage(image.Rect(0, 0, wallWidth, wallHeight)).(*ebiten.Image),
-	}
-}
-
-type Floors [4]*ebiten.Image
-
-func LoadFloors(img *ebiten.Image) Floors {
-	return Floors{
-		subImage(img, 0, 0),
-		subImage(img, 1, 0),
-		subImage(img, 2, 0),
-		subImage(img, 3, 0),
-	}
-}
-
-func (f Floors) GetImage(c model.Color) *ebiten.Image {
-	return f[c]
-}
-
-func getImage(b []byte) *ebiten.Image {
-	img, _, err := image.Decode(bytes.NewReader(b))
-	if err != nil {
-		log.Fatal(err)
-	}
-	eimg := ebiten.NewImageFromImage(img)
-	return eimg
 }

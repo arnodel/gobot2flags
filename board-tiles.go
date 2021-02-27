@@ -5,6 +5,7 @@ import (
 
 	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
+	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -30,13 +31,13 @@ var arrowTypes = []model.ArrowType{
 	model.ArrowNo,
 }
 
-var boardIcons = []IconType{EraserIcon, TrashCanIcon}
+var boardIcons = []sprites.IconType{sprites.EraserIcon, sprites.TrashCanIcon}
 
 type boardTiles struct {
 	selectedType      model.ChipType
 	selectedArrowType model.ArrowType
-	selectedIcon      IconType
-	icons             Icons
+	selectedIcon      sprites.IconType
+	icons             sprites.Icons
 }
 
 func (b *boardTiles) Bounds() image.Rectangle {
@@ -99,7 +100,7 @@ func (b *boardTiles) Click(x, y float64) {
 	j := int(y / 32)
 	selectedArrowType := model.NoArrow
 	selectedType := model.NoChip
-	selectedIcon := NoIcon
+	selectedIcon := sprites.NoIcon
 
 	switch j {
 	case 0:
