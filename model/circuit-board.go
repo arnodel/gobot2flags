@@ -1,9 +1,8 @@
-package main
+package model
 
 import (
 	"errors"
 	"fmt"
-	"image"
 	"strings"
 )
 
@@ -122,8 +121,8 @@ func CircuitBoardFromString(s string) (*CircuitBoard, error) {
 	return b, nil
 }
 
-func (b *CircuitBoard) chipIndex(x, y int) int {
-	return x + b.width*y
+func (b *CircuitBoard) Size() (int, int) {
+	return b.width, b.height
 }
 
 func (b *CircuitBoard) Reset() {
@@ -180,48 +179,8 @@ func (b *CircuitBoard) deleteArrow(p Position, o Orientation) {
 	b.chips[b.chipIndex(p.X, p.Y)] = b.ChipAt(p.X, p.Y).ClearArrow(o)
 }
 
-func (b *CircuitBoard) Bounds() image.Rectangle {
-	return image.Rect(0, 0, b.width*32, b.height*32)
-}
-
-func (b *CircuitBoard) Draw(c Canvas, r *CircuitBoardRenderer) {
-	h := b.height
-	w := b.width
-	_, _ = w, h
-
-	// Draw the background
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			c.Draw(r.Background(x, y, false))
-		}
-	}
-
-	// Draw the arrows
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			chip := b.ChipAt(x, y)
-			if o, ok := chip.ArrowYes(); ok {
-				if chip.IsTest() {
-					c.Draw(r.ArrowYes(x, y, o, chip.IsArrowActive(o)))
-				} else {
-					c.Draw(r.Arrow(x, y, o, chip.IsArrowActive(o)))
-				}
-			}
-			if o, ok := chip.ArrowNo(); ok && chip.IsTest() {
-				c.Draw(r.ArrowNo(x, y, o, chip.IsArrowActive(o)))
-			}
-		}
-	}
-
-	// Draw the chips
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			chip := b.ChipAt(x, y)
-			if chip.Type() != NoChip {
-				c.Draw(r.Chip(chip.Type(), x, y, chip.IsActive()))
-			}
-		}
-	}
+func (b *CircuitBoard) chipIndex(x, y int) int {
+	return x + b.width*y
 }
 
 var chipTypeMap = map[string]ChipType{

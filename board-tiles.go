@@ -3,36 +3,37 @@ package main
 import (
 	"image"
 
+	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-var chipTypes1 = []ChipType{
-	StartChip,
-	ForwardChip,
-	TurnLeftChip,
-	TurnRightChip,
-	PaintRedChip,
-	PaintYellowChip,
-	PaintBlueChip,
+var chipTypes1 = []model.ChipType{
+	model.StartChip,
+	model.ForwardChip,
+	model.TurnLeftChip,
+	model.TurnRightChip,
+	model.PaintRedChip,
+	model.PaintYellowChip,
+	model.PaintBlueChip,
 }
 
-var chipTypes2 = []ChipType{
-	IsWallAheadChip,
-	IsFloorRedChip,
-	IsFloorYellowChip,
-	IsFloorBlueChip,
+var chipTypes2 = []model.ChipType{
+	model.IsWallAheadChip,
+	model.IsFloorRedChip,
+	model.IsFloorYellowChip,
+	model.IsFloorBlueChip,
 }
 
-var arrowTypes = []ArrowType{
-	ArrowYes,
-	ArrowNo,
+var arrowTypes = []model.ArrowType{
+	model.ArrowYes,
+	model.ArrowNo,
 }
 
 var boardIcons = []IconType{EraserIcon, TrashCanIcon}
 
 type boardTiles struct {
-	selectedType      ChipType
-	selectedArrowType ArrowType
+	selectedType      model.ChipType
+	selectedArrowType model.ArrowType
 	selectedIcon      IconType
 	icons             Icons
 }
@@ -95,8 +96,8 @@ func (b *boardTiles) Draw(c Canvas, chips ChipRenderer) {
 func (b *boardTiles) Click(x, y float64) {
 	i := int(x / 24)
 	j := int(y / 32)
-	selectedArrowType := NoArrow
-	selectedType := NoChip
+	selectedArrowType := model.NoArrow
+	selectedType := model.NoChip
 	selectedIcon := NoIcon
 
 	switch j {

@@ -1,9 +1,8 @@
-package main
+package model
 
 import (
 	"errors"
 	"fmt"
-	"image"
 	"log"
 	"strings"
 )
@@ -293,53 +292,12 @@ func MazeFromString(s string) (*Maze, error) {
 	return maze, nil
 }
 
-func (m *Maze) Bounds() image.Rectangle {
-	return image.Rect(-16, -16, 32*m.width+16, 32*m.height+16)
+func (m *Maze) Size() (int, int) {
+	return m.width, m.height
 }
 
-func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
-	h := m.height
-	w := m.width
-
-	// Draw the floors first as they are under everything
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			c.Draw(r.Floor(x, y, m.CellAt(x, y).Color()))
-		}
-	}
-
-	robot := m.robot
-	stack := ImageStack{}
-
-	// Draw the walls and flags
-	for y := 0; y <= h; y++ {
-		for x := 0; x <= w; x++ {
-			cell := m.CellAt(x, y)
-			if cell.CornerWall() {
-				stack.Add(r.CornerWall(x, y))
-			}
-			if y < h && cell.WestWall() {
-				stack.Add(r.WestWall(x, y))
-			}
-			if x < w && cell.NorthWall() {
-				stack.Add(r.NorthWall(x, y))
-			}
-			if x < w && y < h && cell.Flag() {
-				stack.Add(r.Flag(x, y, frame, cell.Captured()))
-			}
-		}
-	}
-
-	// Draw the robot
-	if robot != nil {
-		stack.Add(r.Robot(robot, t, frame))
-		if col := robot.ColorPainting(); col != NoColor {
-			stack.Add(r.PaintFloor(robot.X, robot.Y, t, col))
-		}
-	}
-
-	stack.Draw(c)
-	stack.Empty() // Reuse the underlying slice, same number of objects each time!
+func (m *Maze) Robot() *Robot {
+	return m.robot
 }
 
 func (m *Maze) StopRobot() {

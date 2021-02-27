@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/arnodel/gobot2flags/model"
 	"github.com/arnodel/gobot2flags/resources"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -41,7 +42,7 @@ func main() {
 		levelString = string(levelBytes)
 	}
 
-	maze, err := MazeFromString(levelString)
+	maze, err := model.MazeFromString(levelString)
 	if err != nil {
 		log.Fatalf("Could not create maze: %s", err)
 	}
@@ -54,7 +55,7 @@ func main() {
 	// 	if err != nil {
 	// 		log.Fatalf("Could not create circuit board: %s", err)
 	// 	}
-	board := NewCircuitBoard(8, 8)
+	board := model.NewCircuitBoard(8, 8)
 	chips := ChipRenderer{NewSprite(resources.GetImage("circuitboardtiles.png"), 32, 32, 16, 16)}
 	boardRenderer := NewCircuitBoardRenderer(chips)
 	mazeRenderer := &MazeRenderer{
@@ -73,11 +74,10 @@ func main() {
 		mazeRenderer:    mazeRenderer,
 		board:           board,
 		boardRenderer:   &boardRenderer,
-		controller:      &ManualController{},
-		boardController: newBoardController(board, maze.Clone()),
+		boardController: model.NewBoardController(board, maze.Clone()),
 		showBoard:       true,
 		chipSelector: &boardTiles{
-			selectedType: StartChip,
+			selectedType: model.StartChip,
 			icons:        icons,
 		},
 		gameControlSelector: &gameControlSelector{

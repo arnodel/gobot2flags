@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
@@ -16,12 +17,11 @@ type Game struct {
 	showBoard                   bool
 	proportion                  float64
 	mazeRenderer                *MazeRenderer
-	maze                        *Maze
+	maze                        *model.Maze
 	boardRenderer               *CircuitBoardRenderer
-	board                       *CircuitBoard
+	board                       *model.CircuitBoard
 	chipSelector                *boardTiles
-	controller                  *ManualController
-	boardController             *BoardController
+	boardController             *model.BoardController
 	mazeWindow                  *Window
 	mazeControlsWindow          *Window
 	boardWindow                 *Window
@@ -32,10 +32,6 @@ type Game struct {
 }
 
 func (g *Game) Update() error {
-	g.controller.UpdateNextCommand()
-	if g.controller.GetSwitch() {
-		g.showBoard = !g.showBoard
-	}
 	screenRect := image.Rect(0, 0, g.outsideWidth, g.outsideHeight)
 	var mr, br image.Rectangle
 	var tr, mtr, btr ebiten.GeoM
@@ -58,7 +54,7 @@ func (g *Game) Update() error {
 	br1, br2 := hSplit(br, int(128*(1-g.proportion)))
 
 	g.boardControlsWindow = centeredWindow(br1, g.chipSelector.Bounds(), tr)
-	g.boardWindow = centeredWindow(br2, g.board.Bounds(), btr)
+	g.boardWindow = centeredWindow(br2, g.boardRenderer.CircuitBoardBounds(g.board), btr)
 
 	//gameWon := g.boardController.GameWon()
 
@@ -82,7 +78,7 @@ func (g *Game) Update() error {
 		}
 	}
 	if !g.playing && adv > 0 {
-		boardController := newBoardController(g.board, g.maze.Clone())
+		boardController := model.NewBoardController(g.board, g.maze.Clone())
 		if boardController != nil {
 			g.boardController = boardController
 			g.playing = true
@@ -105,7 +101,7 @@ func (g *Game) Update() error {
 	mr1, mr2 := hSplit(mr, 64)
 
 	g.mazeControlsWindow = centeredWindow(mr1, g.gameControlSelector.Bounds(), tr)
-	g.mazeWindow = centeredWindow(mr2, g.maze.Bounds(), mtr)
+	g.mazeWindow = centeredWindow(mr2, g.mazeRenderer.MazeBounds(g.maze), mtr)
 
 	g.pointer.Update()
 
@@ -133,11 +129,11 @@ func (g *Game) updateBoard() {
 		if g.boardControlsWindow.Contains(cur) {
 			xx, yy := g.boardControlsWindow.Coords(cur)
 			g.chipSelector.Click(xx, yy)
-		} else if g.chipSelector.selectedType == NoChip {
+		} else if g.chipSelector.selectedType == model.NoChip {
 			if g.boardWindow.Contains(cur) && g.chipSelector.selectedIcon == TrashCanIcon {
 				g.board.Reset()
 				g.chipSelector.selectedIcon = NoIcon
-				g.chipSelector.selectedType = StartChip
+				g.chipSelector.selectedType = model.StartChip
 			}
 		} else if cx, cy, cok := g.slotCoords(cur); cok {
 			newChip := g.board.ChipAt(cx, cy).WithType(g.chipSelector.selectedType)
@@ -150,23 +146,23 @@ func (g *Game) updateBoard() {
 		cx, cy, cok := g.slotCoords(cur)
 		sx, sy, sok := g.slotCoords(g.pointer.startPos)
 		if cok && sok && cx == sx && cy == sy {
-			newChip := g.board.ChipAt(cx, cy).WithType(NoChip)
+			newChip := g.board.ChipAt(cx, cy).WithType(model.NoChip)
 			g.board.SetChipAt(cx, cy, newChip)
 		}
 	case Dragging:
-		if g.chipSelector.selectedArrowType == NoArrow && g.chipSelector.selectedIcon != EraserIcon {
+		if g.chipSelector.selectedArrowType == model.NoArrow && g.chipSelector.selectedIcon != EraserIcon {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
 		lx, ly, lok := g.slotCoords(g.pointer.lastPos)
 		if cok && lok {
-			o, ok := Velocity{Dx: cx - lx, Dy: cy - ly}.Orientation()
+			o, ok := model.Velocity{Dx: cx - lx, Dy: cy - ly}.Orientation()
 			if ok {
 				g.pointer.startPos = g.pointer.lastPos // This is so we don't erase chips by doing loops
 				oldChip := g.board.ChipAt(lx, ly)
 				newChip := oldChip.WithArrow(o, g.chipSelector.selectedArrowType)
-				if g.chipSelector.selectedArrowType == ArrowNo && newChip != oldChip {
-					g.chipSelector.selectedArrowType = ArrowYes
+				if g.chipSelector.selectedArrowType == model.ArrowNo && newChip != oldChip {
+					g.chipSelector.selectedArrowType = model.ArrowYes
 				}
 				g.board.SetChipAt(lx, ly, newChip)
 
@@ -217,16 +213,16 @@ func (g *Game) drawMaze(screen *ebiten.Image) {
 	g.gameControlSelector.Draw(g.mazeControlsWindow.Canvas(screen))
 	maze := g.maze
 	if g.playing {
-		maze = g.boardController.maze
+		maze = g.boardController.Maze()
 	}
-	maze.Draw(g.mazeWindow.Canvas(screen), g.mazeRenderer, float64(g.step)/60, g.count/60)
+	g.mazeRenderer.DrawMaze(g.mazeWindow.Canvas(screen), maze, float64(g.step)/60, g.count/60)
 }
 
 func (g *Game) drawBoard(screen *ebiten.Image) {
 	if !g.playing {
 		g.chipSelector.Draw(g.boardControlsWindow.Canvas(screen), g.boardRenderer.chips)
 	}
-	g.board.Draw(g.boardWindow.Canvas(screen), g.boardRenderer)
+	g.boardRenderer.DrawCircuitBoard(g.boardWindow.Canvas(screen), g.board)
 }
 
 func hSplit(r image.Rectangle, y int) (r1 image.Rectangle, r2 image.Rectangle) {

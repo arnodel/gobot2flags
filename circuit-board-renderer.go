@@ -1,6 +1,9 @@
 package main
 
 import (
+	"image"
+
+	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -8,11 +11,11 @@ type ChipRenderer struct {
 	*Sprite
 }
 
-func (r ChipRenderer) GetChipImage(c ChipType) *ebiten.Image {
+func (r ChipRenderer) GetChipImage(c model.ChipType) *ebiten.Image {
 	return r.GetImage(chipType2imageIdx[c], 0)
 }
 
-func (r ChipRenderer) GetArrowImage(a ArrowType) *ebiten.Image {
+func (r ChipRenderer) GetArrowImage(a model.ArrowType) *ebiten.Image {
 	return r.GetImage(arrowType2ImageIdx[a], 0)
 }
 
@@ -29,11 +32,54 @@ func NewCircuitBoardRenderer(chips ChipRenderer) CircuitBoardRenderer {
 	}
 }
 
+func (r *CircuitBoardRenderer) DrawCircuitBoard(c Canvas, b *model.CircuitBoard) {
+	w, h := b.Size()
+
+	// Draw the background
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			c.Draw(r.Background(x, y, false))
+		}
+	}
+
+	// Draw the arrows
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			chip := b.ChipAt(x, y)
+			if o, ok := chip.ArrowYes(); ok {
+				if chip.IsTest() {
+					c.Draw(r.ArrowYes(x, y, o, chip.IsArrowActive(o)))
+				} else {
+					c.Draw(r.Arrow(x, y, o, chip.IsArrowActive(o)))
+				}
+			}
+			if o, ok := chip.ArrowNo(); ok && chip.IsTest() {
+				c.Draw(r.ArrowNo(x, y, o, chip.IsArrowActive(o)))
+			}
+		}
+	}
+
+	// Draw the chips
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			chip := b.ChipAt(x, y)
+			if chip.Type() != model.NoChip {
+				c.Draw(r.Chip(chip.Type(), x, y, chip.IsActive()))
+			}
+		}
+	}
+}
+
+func (r *CircuitBoardRenderer) CircuitBoardBounds(b *model.CircuitBoard) image.Rectangle {
+	w, h := b.Size()
+	return image.Rect(0, 0, w*32, h*32)
+}
+
 func (b CircuitBoardRenderer) GetSlotCoords(x, y float64) (int, int) {
 	return int(x / b.width), int(y / b.height)
 }
 
-func (b CircuitBoardRenderer) Chip(c ChipType, x, y int, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) Chip(c model.ChipType, x, y int, active bool) ImageToDraw {
 	return b.imageByIndex(chipType2imageIdx[c], x, y, active)
 }
 
@@ -41,15 +87,15 @@ func (b CircuitBoardRenderer) Background(x, y int, active bool) ImageToDraw {
 	return b.imageByIndex(backgroundIdx, x, y, active)
 }
 
-func (b CircuitBoardRenderer) Arrow(x, y int, o Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) Arrow(x, y int, o model.Orientation, active bool) ImageToDraw {
 	return b.arrow(arrowNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) ArrowYes(x, y int, o Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) ArrowYes(x, y int, o model.Orientation, active bool) ImageToDraw {
 	return b.arrow(arrowYesNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) ArrowNo(x, y int, o Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) ArrowNo(x, y int, o model.Orientation, active bool) ImageToDraw {
 	return b.arrow(arrowNoNorthIdx, x, y, o, active)
 }
 
@@ -64,7 +110,7 @@ func (b CircuitBoardRenderer) imageByIndex(i int, x, y int, active bool) ImageTo
 	}
 }
 
-func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o model.Orientation, active bool) ImageToDraw {
 	// log.Printf("Arrow %d, x=%d, y=%d, o=%d", baseIdx, x, y, o)
 	i := baseIdx + int(o)
 	v := o.VelocityForward()
@@ -88,23 +134,23 @@ func activeFrame(active bool) int {
 	return 0
 }
 
-var chipType2imageIdx = map[ChipType]int{
-	StartChip:         startIdx,
-	ForwardChip:       forwardIdx,
-	TurnLeftChip:      turnLeftIdx,
-	TurnRightChip:     turnRightIdx,
-	PaintRedChip:      paintRedIdx,
-	PaintYellowChip:   paintYellowIdx,
-	PaintBlueChip:     paintBlueIdx,
-	IsWallAheadChip:   isWallAheadIdx,
-	IsFloorRedChip:    isFloorRedIdx,
-	IsFloorYellowChip: isFloorYellowIdx,
-	IsFloorBlueChip:   isFloorBueIdx,
+var chipType2imageIdx = map[model.ChipType]int{
+	model.StartChip:         startIdx,
+	model.ForwardChip:       forwardIdx,
+	model.TurnLeftChip:      turnLeftIdx,
+	model.TurnRightChip:     turnRightIdx,
+	model.PaintRedChip:      paintRedIdx,
+	model.PaintYellowChip:   paintYellowIdx,
+	model.PaintBlueChip:     paintBlueIdx,
+	model.IsWallAheadChip:   isWallAheadIdx,
+	model.IsFloorRedChip:    isFloorRedIdx,
+	model.IsFloorYellowChip: isFloorYellowIdx,
+	model.IsFloorBlueChip:   isFloorBueIdx,
 }
 
-var arrowType2ImageIdx = map[ArrowType]int{
-	ArrowNo:  arrowNoNorthIdx,
-	ArrowYes: arrowYesNorthIdx,
+var arrowType2ImageIdx = map[model.ArrowType]int{
+	model.ArrowNo:  arrowNoNorthIdx,
+	model.ArrowYes: arrowYesNorthIdx,
 }
 
 const (

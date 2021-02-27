@@ -1,9 +1,7 @@
-package main
+package model
 
 import (
 	"log"
-
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Command int
@@ -39,41 +37,6 @@ func (c Command) String() string {
 	}
 }
 
-type ManualController struct {
-	nextCommand  Command
-	spacePressed bool
-	switchView   bool
-}
-
-func (c *ManualController) NextCommand() (com Command) {
-	com = c.nextCommand
-	c.nextCommand = NoCommand
-	return
-}
-
-func (c *ManualController) GetSwitch() bool {
-	s := c.switchView
-	c.switchView = false
-	return s
-}
-
-func (c *ManualController) UpdateNextCommand() Command {
-	spacePressed := ebiten.IsKeyPressed(ebiten.KeySpace)
-	if spacePressed && !c.spacePressed {
-		c.switchView = true
-	}
-	c.spacePressed = spacePressed
-	switch {
-	case ebiten.IsKeyPressed(ebiten.KeyLeft):
-		c.nextCommand = TurnLeft
-	case ebiten.IsKeyPressed(ebiten.KeyUp):
-		c.nextCommand = MoveForward
-	case ebiten.IsKeyPressed(ebiten.KeyRight):
-		c.nextCommand = TurnRight
-	}
-	return c.nextCommand
-}
-
 type BoardController struct {
 	board    *CircuitBoard
 	maze     *Maze
@@ -82,7 +45,7 @@ type BoardController struct {
 	deadEnd  bool
 }
 
-func newBoardController(board *CircuitBoard, maze *Maze) *BoardController {
+func NewBoardController(board *CircuitBoard, maze *Maze) *BoardController {
 	startPos, ok := board.StartPos()
 	if !ok {
 		return nil
@@ -93,6 +56,10 @@ func newBoardController(board *CircuitBoard, maze *Maze) *BoardController {
 		robot:    maze.robot,
 		boardPos: startPos,
 	}
+}
+
+func (c *BoardController) Maze() *Maze {
+	return c.maze
 }
 
 func (c *BoardController) GameWon() bool {

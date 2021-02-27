@@ -5,6 +5,7 @@ import (
 	"image"
 	"log"
 
+	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -16,7 +17,7 @@ type MazeRenderer struct {
 	flag, robot           *Sprite
 }
 
-func (r *MazeRenderer) Floor(x, y int, col Color) ImageToDraw {
+func (r *MazeRenderer) Floor(x, y int, col model.Color) ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth), float64(y*r.cellHeight))
 	return ImageToDraw{
@@ -25,7 +26,7 @@ func (r *MazeRenderer) Floor(x, y int, col Color) ImageToDraw {
 	}
 }
 
-func (r *MazeRenderer) PaintFloor(x, y int, t float64, col Color) ImageToDraw {
+func (r *MazeRenderer) PaintFloor(x, y int, t float64, col model.Color) ImageToDraw {
 	img := r.Floor(x, y, col)
 	img.Options.ColorM.Scale(1, 1, 1, t)
 	return img
@@ -78,7 +79,7 @@ func (r *MazeRenderer) Flag(x, y int, frame int, captured bool) ImageToDraw {
 	}
 }
 
-func (r *MazeRenderer) Robot(robot *Robot, t float64, frame int) ImageToDraw {
+func (r *MazeRenderer) Robot(robot *model.Robot, t float64, frame int) ImageToDraw {
 	a := robot.AngleAt(t)
 	x, y := robot.CoordsAt(t)
 	op := ebiten.DrawImageOptions{}
@@ -92,6 +93,55 @@ func (r *MazeRenderer) Robot(robot *Robot, t float64, frame int) ImageToDraw {
 		Options: &op,
 		Z:       robotY,
 	}
+}
+
+func (r *MazeRenderer) MazeBounds(m *model.Maze) image.Rectangle {
+	w, h := m.Size()
+	return image.Rect(-16, -16, 32*w+16, 32*h+16)
+}
+
+func (r *MazeRenderer) DrawMaze(c Canvas, m *model.Maze, t float64, frame int) {
+	w, h := m.Size()
+
+	// Draw the floors first as they are under everything
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			c.Draw(r.Floor(x, y, m.CellAt(x, y).Color()))
+		}
+	}
+
+	stack := ImageStack{}
+
+	// Draw the walls and flags
+	for y := 0; y <= h; y++ {
+		for x := 0; x <= w; x++ {
+			cell := m.CellAt(x, y)
+			if cell.CornerWall() {
+				stack.Add(r.CornerWall(x, y))
+			}
+			if y < h && cell.WestWall() {
+				stack.Add(r.WestWall(x, y))
+			}
+			if x < w && cell.NorthWall() {
+				stack.Add(r.NorthWall(x, y))
+			}
+			if x < w && y < h && cell.Flag() {
+				stack.Add(r.Flag(x, y, frame, cell.Captured()))
+			}
+		}
+	}
+
+	// Draw the robot
+	robot := m.Robot()
+	if robot != nil {
+		stack.Add(r.Robot(robot, t, frame))
+		if col := robot.ColorPainting(); col != model.NoColor {
+			stack.Add(r.PaintFloor(robot.X, robot.Y, t, col))
+		}
+	}
+
+	stack.Draw(c)
+	stack.Empty() // Reuse the underlying slice, same number of objects each time!
 }
 
 func subImage(img *ebiten.Image, x, y int) *ebiten.Image {
@@ -121,7 +171,7 @@ func LoadFloors(img *ebiten.Image) Floors {
 	}
 }
 
-func (f Floors) GetImage(c Color) *ebiten.Image {
+func (f Floors) GetImage(c model.Color) *ebiten.Image {
 	return f[c]
 }
 
