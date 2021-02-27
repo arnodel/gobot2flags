@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"image"
@@ -30,6 +30,38 @@ type Game struct {
 	gameControlSelector         *gameControlSelector
 	pointer                     *engine.PointerTracker
 	playing                     bool
+}
+
+func New(maze *model.Maze, board *model.CircuitBoard) *Game {
+	chips := ChipRenderer{sprites.CircuitBoardTiles}
+	boardRenderer := NewCircuitBoardRenderer(chips)
+	mazeRenderer := &MazeRenderer{
+		cellWidth:  sprites.FrameWidth,
+		cellHeight: sprites.FrameHeight,
+		wallWidth:  sprites.WallWidth,
+		wallHeight: sprites.WallHeight,
+		walls:      sprites.GreyWalls,
+		floors:     sprites.PlainFloors,
+		robot:      sprites.Robot,
+		flag:       sprites.Flag,
+	}
+	return &Game{
+		maze:            maze,
+		mazeRenderer:    mazeRenderer,
+		board:           board,
+		boardRenderer:   &boardRenderer,
+		boardController: model.NewBoardController(board, maze.Clone()),
+		showBoard:       true,
+		chipSelector: &boardTiles{
+			selectedType: model.StartChip,
+			icons:        sprites.PlainIcons,
+		},
+		gameControlSelector: &gameControlSelector{
+			selectedControl: Rewind,
+			icons:           sprites.PlainIcons,
+		},
+		pointer: &engine.PointerTracker{},
+	}
 }
 
 func (g *Game) Update() error {

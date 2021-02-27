@@ -6,21 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/arnodel/gobot2flags/engine"
+	"github.com/arnodel/gobot2flags/game"
 	"github.com/arnodel/gobot2flags/model"
-	"github.com/arnodel/gobot2flags/resources"
-	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
-)
-
-const debug = false
-
-const (
-	frameWidth  = 32
-	frameHeight = 32
-
-	wallWidth  = 6
-	wallHeight = 7
 )
 
 func main() {
@@ -58,39 +46,12 @@ func main() {
 	// 		log.Fatalf("Could not create circuit board: %s", err)
 	// 	}
 	board := model.NewCircuitBoard(8, 8)
-	chips := ChipRenderer{engine.NewSprite(resources.GetImage("circuitboardtiles.png"), 32, 32, 16, 16)}
-	boardRenderer := NewCircuitBoardRenderer(chips)
-	mazeRenderer := &MazeRenderer{
-		cellWidth:  frameWidth,
-		cellHeight: frameHeight,
-		wallWidth:  wallWidth,
-		wallHeight: wallHeight,
-		walls:      sprites.GreyWalls,
-		floors:     sprites.PlainFloors,
-		robot:      sprites.Robot,
-		flag:       sprites.Flag,
-	}
-	game := &Game{
-		maze:            maze,
-		mazeRenderer:    mazeRenderer,
-		board:           board,
-		boardRenderer:   &boardRenderer,
-		boardController: model.NewBoardController(board, maze.Clone()),
-		showBoard:       true,
-		chipSelector: &boardTiles{
-			selectedType: model.StartChip,
-			icons:        sprites.PlainIcons,
-		},
-		gameControlSelector: &gameControlSelector{
-			selectedControl: Rewind,
-			icons:           sprites.PlainIcons,
-		},
-		pointer: &engine.PointerTracker{},
-	}
+	theGame := game.New(maze, board)
+
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Gobot 2 Flags")
 	ebiten.SetWindowResizable(true)
-	if err := ebiten.RunGame(game); err != nil {
+	if err := ebiten.RunGame(theGame); err != nil {
 		log.Fatal(err)
 	}
 }
