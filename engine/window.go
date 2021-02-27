@@ -1,4 +1,4 @@
-package main
+package engine
 
 import (
 	"image"
@@ -50,7 +50,7 @@ func (w *Window) Coords(pt image.Point) (float64, float64) {
 	return inv.Apply(fc(pt))
 }
 
-func centeredWindow(bounds image.Rectangle, drawBounds image.Rectangle, tr ebiten.GeoM) *Window {
+func CenteredWindow(bounds image.Rectangle, drawBounds image.Rectangle, tr ebiten.GeoM) *Window {
 	minX, minY := tr.Apply(fc(drawBounds.Min))
 	maxX, maxY := tr.Apply(fc(drawBounds.Max))
 	bsz := bounds.Size()

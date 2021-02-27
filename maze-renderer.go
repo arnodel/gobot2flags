@@ -5,6 +5,7 @@ import (
 	"image"
 	"log"
 
+	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -14,55 +15,55 @@ type MazeRenderer struct {
 	wallWidth, wallHeight int
 	walls                 Walls
 	floors                Floors
-	flag, robot           *Sprite
+	flag, robot           *engine.Sprite
 }
 
-func (r *MazeRenderer) Floor(x, y int, col model.Color) ImageToDraw {
+func (r *MazeRenderer) Floor(x, y int, col model.Color) engine.ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth), float64(y*r.cellHeight))
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   r.floors.GetImage(col),
 		Options: &op,
 	}
 }
 
-func (r *MazeRenderer) PaintFloor(x, y int, t float64, col model.Color) ImageToDraw {
+func (r *MazeRenderer) PaintFloor(x, y int, t float64, col model.Color) engine.ImageToDraw {
 	img := r.Floor(x, y, col)
 	img.Options.ColorM.Scale(1, 1, 1, t)
 	return img
 }
 
-func (r *MazeRenderer) NorthWall(x, y int) ImageToDraw {
+func (r *MazeRenderer) NorthWall(x, y int) engine.ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth), float64(y*r.cellHeight-r.wallHeight))
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   r.walls.Horizontal,
 		Options: &op,
 		Z:       float64(y * r.cellHeight),
 	}
 }
 
-func (r *MazeRenderer) WestWall(x, y int) ImageToDraw {
+func (r *MazeRenderer) WestWall(x, y int) engine.ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth-r.wallWidth/2), float64(y*r.cellHeight))
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   r.walls.Vertical,
 		Options: &op,
 		Z:       float64((y + 1) * r.cellHeight),
 	}
 }
 
-func (r *MazeRenderer) CornerWall(x, y int) ImageToDraw {
+func (r *MazeRenderer) CornerWall(x, y int) engine.ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth-r.wallWidth/2), float64(y*r.cellHeight-r.wallHeight))
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   r.walls.Corner,
 		Options: &op,
 		Z:       float64(y*r.cellHeight) - 1e-3, // Subtract a small number to make it go behind the other walls
 	}
 }
 
-func (r *MazeRenderer) Flag(x, y int, frame int, captured bool) ImageToDraw {
+func (r *MazeRenderer) Flag(x, y int, frame int, captured bool) engine.ImageToDraw {
 	variant := 0
 	if captured {
 		variant = 1
@@ -72,14 +73,14 @@ func (r *MazeRenderer) Flag(x, y int, frame int, captured bool) ImageToDraw {
 	r.flag.Anchor(tr)
 	flagY := float64(y*r.cellHeight + 9)
 	op.GeoM.Translate(float64(x*r.cellWidth+6), flagY)
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   r.flag.GetImage(variant, frame),
 		Options: &op,
 		Z:       flagY,
 	}
 }
 
-func (r *MazeRenderer) Robot(robot *model.Robot, t float64, frame int) ImageToDraw {
+func (r *MazeRenderer) Robot(robot *model.Robot, t float64, frame int) engine.ImageToDraw {
 	a := robot.AngleAt(t)
 	x, y := robot.CoordsAt(t)
 	op := ebiten.DrawImageOptions{}
@@ -88,7 +89,7 @@ func (r *MazeRenderer) Robot(robot *model.Robot, t float64, frame int) ImageToDr
 	tr.Rotate(a)
 	robotY := (y + 0.5) * float64(r.cellHeight)
 	tr.Translate((x+0.5)*float64(r.cellWidth), robotY)
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   r.robot.GetImage(0, 0),
 		Options: &op,
 		Z:       robotY,
@@ -100,7 +101,7 @@ func (r *MazeRenderer) MazeBounds(m *model.Maze) image.Rectangle {
 	return image.Rect(-16, -16, 32*w+16, 32*h+16)
 }
 
-func (r *MazeRenderer) DrawMaze(c Canvas, m *model.Maze, t float64, frame int) {
+func (r *MazeRenderer) DrawMaze(c engine.Canvas, m *model.Maze, t float64, frame int) {
 	w, h := m.Size()
 
 	// Draw the floors first as they are under everything
@@ -110,7 +111,7 @@ func (r *MazeRenderer) DrawMaze(c Canvas, m *model.Maze, t float64, frame int) {
 		}
 	}
 
-	stack := ImageStack{}
+	stack := engine.ImageStack{}
 
 	// Draw the walls and flags
 	for y := 0; y <= h; y++ {

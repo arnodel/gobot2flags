@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
 	"github.com/arnodel/gobot2flags/resources"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -56,7 +57,7 @@ func main() {
 	// 		log.Fatalf("Could not create circuit board: %s", err)
 	// 	}
 	board := model.NewCircuitBoard(8, 8)
-	chips := ChipRenderer{NewSprite(resources.GetImage("circuitboardtiles.png"), 32, 32, 16, 16)}
+	chips := ChipRenderer{engine.NewSprite(resources.GetImage("circuitboardtiles.png"), 32, 32, 16, 16)}
 	boardRenderer := NewCircuitBoardRenderer(chips)
 	mazeRenderer := &MazeRenderer{
 		cellWidth:  frameWidth,
@@ -65,10 +66,10 @@ func main() {
 		wallHeight: wallHeight,
 		walls:      NewWalls(resources.GetImage("greywalls.png")),
 		floors:     LoadFloors(resources.GetImage("floors.png")),
-		robot:      NewSprite(resources.GetImage("robot.png"), frameWidth, frameHeight, 16, 16),
-		flag:       NewSprite(resources.GetImage("greenflag.png"), frameWidth, frameHeight, 10, 28),
+		robot:      engine.NewSprite(resources.GetImage("robot.png"), frameWidth, frameHeight, 16, 16),
+		flag:       engine.NewSprite(resources.GetImage("greenflag.png"), frameWidth, frameHeight, 10, 28),
 	}
-	icons := Icons{NewSprite(resources.GetImage("icons.png"), 32, 32, 16, 16)}
+	icons := Icons{engine.NewSprite(resources.GetImage("icons.png"), 32, 32, 16, 16)}
 	game := &Game{
 		maze:            maze,
 		mazeRenderer:    mazeRenderer,
@@ -84,6 +85,7 @@ func main() {
 			selectedControl: Rewind,
 			icons:           icons,
 		},
+		pointer: &engine.PointerTracker{},
 	}
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Gobot 2 Flags")
@@ -108,7 +110,7 @@ const (
 const NoIcon IconType = -1
 
 type Icons struct {
-	*Sprite
+	*engine.Sprite
 }
 
 func (i Icons) Get(tp IconType) *ebiten.Image {

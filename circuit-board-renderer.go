@@ -3,12 +3,13 @@ package main
 import (
 	"image"
 
+	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type ChipRenderer struct {
-	*Sprite
+	*engine.Sprite
 }
 
 func (r ChipRenderer) GetChipImage(c model.ChipType) *ebiten.Image {
@@ -32,7 +33,7 @@ func NewCircuitBoardRenderer(chips ChipRenderer) CircuitBoardRenderer {
 	}
 }
 
-func (r *CircuitBoardRenderer) DrawCircuitBoard(c Canvas, b *model.CircuitBoard) {
+func (r *CircuitBoardRenderer) DrawCircuitBoard(c engine.Canvas, b *model.CircuitBoard) {
 	w, h := b.Size()
 
 	// Draw the background
@@ -79,38 +80,38 @@ func (b CircuitBoardRenderer) GetSlotCoords(x, y float64) (int, int) {
 	return int(x / b.width), int(y / b.height)
 }
 
-func (b CircuitBoardRenderer) Chip(c model.ChipType, x, y int, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) Chip(c model.ChipType, x, y int, active bool) engine.ImageToDraw {
 	return b.imageByIndex(chipType2imageIdx[c], x, y, active)
 }
 
-func (b CircuitBoardRenderer) Background(x, y int, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) Background(x, y int, active bool) engine.ImageToDraw {
 	return b.imageByIndex(backgroundIdx, x, y, active)
 }
 
-func (b CircuitBoardRenderer) Arrow(x, y int, o model.Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) Arrow(x, y int, o model.Orientation, active bool) engine.ImageToDraw {
 	return b.arrow(arrowNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) ArrowYes(x, y int, o model.Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) ArrowYes(x, y int, o model.Orientation, active bool) engine.ImageToDraw {
 	return b.arrow(arrowYesNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) ArrowNo(x, y int, o model.Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) ArrowNo(x, y int, o model.Orientation, active bool) engine.ImageToDraw {
 	return b.arrow(arrowNoNorthIdx, x, y, o, active)
 }
 
-func (b CircuitBoardRenderer) imageByIndex(i int, x, y int, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) imageByIndex(i int, x, y int, active bool) engine.ImageToDraw {
 	opts := ebiten.DrawImageOptions{}
 	b.chips.Anchor(&opts.GeoM)
 	opts.GeoM.Translate((float64(x)+0.5)*b.width, (float64(y)+0.5)*b.height)
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   b.chips.GetImage(i, activeFrame(active)),
 		Options: &opts,
 		Z:       chipZ,
 	}
 }
 
-func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o model.Orientation, active bool) ImageToDraw {
+func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o model.Orientation, active bool) engine.ImageToDraw {
 	// log.Printf("Arrow %d, x=%d, y=%d, o=%d", baseIdx, x, y, o)
 	i := baseIdx + int(o)
 	v := o.VelocityForward()
@@ -120,7 +121,7 @@ func (b CircuitBoardRenderer) arrow(baseIdx int, x, y int, o model.Orientation, 
 		(float64(x)+0.5*(1+float64(v.Dx)))*b.width,
 		(float64(y)+0.5*(1+float64(v.Dy)))*b.height,
 	)
-	return ImageToDraw{
+	return engine.ImageToDraw{
 		Image:   b.chips.GetImage(i, activeFrame(active)),
 		Options: &opts,
 		Z:       arrowZ,

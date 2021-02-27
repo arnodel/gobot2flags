@@ -5,9 +5,9 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 type Game struct {
@@ -22,12 +22,12 @@ type Game struct {
 	board                       *model.CircuitBoard
 	chipSelector                *boardTiles
 	boardController             *model.BoardController
-	mazeWindow                  *Window
-	mazeControlsWindow          *Window
-	boardWindow                 *Window
-	boardControlsWindow         *Window
+	mazeWindow                  *engine.Window
+	mazeControlsWindow          *engine.Window
+	boardWindow                 *engine.Window
+	boardControlsWindow         *engine.Window
 	gameControlSelector         *gameControlSelector
-	pointer                     PointerTracker
+	pointer                     *engine.PointerTracker
 	playing                     bool
 }
 
@@ -53,8 +53,8 @@ func (g *Game) Update() error {
 	// board
 	br1, br2 := hSplit(br, int(128*(1-g.proportion)))
 
-	g.boardControlsWindow = centeredWindow(br1, g.chipSelector.Bounds(), tr)
-	g.boardWindow = centeredWindow(br2, g.boardRenderer.CircuitBoardBounds(g.board), btr)
+	g.boardControlsWindow = engine.CenteredWindow(br1, g.chipSelector.Bounds(), tr)
+	g.boardWindow = engine.CenteredWindow(br2, g.boardRenderer.CircuitBoardBounds(g.board), btr)
 
 	//gameWon := g.boardController.GameWon()
 
@@ -100,16 +100,16 @@ func (g *Game) Update() error {
 
 	mr1, mr2 := hSplit(mr, 64)
 
-	g.mazeControlsWindow = centeredWindow(mr1, g.gameControlSelector.Bounds(), tr)
-	g.mazeWindow = centeredWindow(mr2, g.mazeRenderer.MazeBounds(g.maze), mtr)
+	g.mazeControlsWindow = engine.CenteredWindow(mr1, g.gameControlSelector.Bounds(), tr)
+	g.mazeWindow = engine.CenteredWindow(mr2, g.mazeRenderer.MazeBounds(g.maze), mtr)
 
 	g.pointer.Update()
 
-	if g.pointer.status == TouchDown {
-		if g.boardWindow.Contains(g.pointer.currentPos) && !g.showBoard {
+	if g.pointer.Status() == engine.TouchDown {
+		if g.boardWindow.Contains(g.pointer.CurrentPos()) && !g.showBoard {
 			g.showBoard = true
 			g.pointer.CancelTouch()
-		} else if g.mazeWindow.Contains(g.pointer.currentPos) && g.showBoard {
+		} else if g.mazeWindow.Contains(g.pointer.CurrentPos()) && g.showBoard {
 			g.showBoard = false
 			g.pointer.CancelTouch()
 		}
@@ -123,9 +123,9 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) updateBoard() {
-	cur := g.pointer.currentPos
-	switch g.pointer.status {
-	case TouchDown:
+	cur := g.pointer.CurrentPos()
+	switch g.pointer.Status() {
+	case engine.TouchDown:
 		if g.boardControlsWindow.Contains(cur) {
 			xx, yy := g.boardControlsWindow.Coords(cur)
 			g.chipSelector.Click(xx, yy)
@@ -139,26 +139,26 @@ func (g *Game) updateBoard() {
 			newChip := g.board.ChipAt(cx, cy).WithType(g.chipSelector.selectedType)
 			g.board.SetChipAt(cx, cy, newChip)
 		}
-	case TouchUp:
+	case engine.TouchUp:
 		if g.chipSelector.selectedIcon != EraserIcon {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
-		sx, sy, sok := g.slotCoords(g.pointer.startPos)
+		sx, sy, sok := g.slotCoords(g.pointer.StartPos())
 		if cok && sok && cx == sx && cy == sy {
 			newChip := g.board.ChipAt(cx, cy).WithType(model.NoChip)
 			g.board.SetChipAt(cx, cy, newChip)
 		}
-	case Dragging:
+	case engine.Dragging:
 		if g.chipSelector.selectedArrowType == model.NoArrow && g.chipSelector.selectedIcon != EraserIcon {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
-		lx, ly, lok := g.slotCoords(g.pointer.lastPos)
+		lx, ly, lok := g.slotCoords(g.pointer.LastPos())
 		if cok && lok {
 			o, ok := model.Velocity{Dx: cx - lx, Dy: cy - ly}.Orientation()
 			if ok {
-				g.pointer.startPos = g.pointer.lastPos // This is so we don't erase chips by doing loops
+				g.pointer.AdvanceStartPos() // This is so we don't erase chips by doing loops
 				oldChip := g.board.ChipAt(lx, ly)
 				newChip := oldChip.WithArrow(o, g.chipSelector.selectedArrowType)
 				if g.chipSelector.selectedArrowType == model.ArrowNo && newChip != oldChip {
@@ -189,9 +189,9 @@ func (g *Game) slotCoords(p image.Point) (int, int, bool) {
 }
 
 func (g *Game) updateMaze() {
-	switch g.pointer.status {
-	case TouchDown:
-		cur := g.pointer.currentPos
+	switch g.pointer.Status() {
+	case engine.TouchDown:
+		cur := g.pointer.CurrentPos()
 		if g.mazeControlsWindow.Contains(cur) {
 			xx, yy := g.mazeControlsWindow.Coords(cur)
 			g.gameControlSelector.Click(xx, yy)
@@ -203,9 +203,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
 	g.drawMaze(screen)
 	if g.playing && g.boardController.GameWon() {
-		text.Draw(screen, "You Won!!!", msgFont, 10, g.outsideHeight-10, color.RGBA{0, 255, 0, 255})
+		engine.DrawText(screen, "You Won!!!", 10, g.outsideHeight-10, color.RGBA{0, 255, 0, 255})
 	} else {
-		text.Draw(screen, "gobot2flags", msgFont, 10, g.outsideHeight-10, color.White)
+		engine.DrawText(screen, "gobot2flags", 10, g.outsideHeight-10, color.White)
 	}
 }
 

@@ -1,4 +1,4 @@
-package main
+package engine
 
 import (
 	"image"
@@ -27,6 +27,27 @@ type PointerTracker struct {
 func (p *PointerTracker) CancelTouch() {
 	p.cancelTouch = true
 	p.status = NoTouch
+}
+
+func (p *PointerTracker) Status() PointerStatus {
+	return p.status
+}
+
+func (p *PointerTracker) CurrentPos() image.Point {
+	return p.currentPos
+}
+
+func (p *PointerTracker) LastPos() image.Point {
+	return p.lastPos
+}
+
+func (p *PointerTracker) StartPos() image.Point {
+	return p.startPos
+}
+
+// TODO: perhaps remove necessity for this method?
+func (p *PointerTracker) AdvanceStartPos() {
+	p.startPos = p.lastPos
 }
 
 func (p *PointerTracker) Update() {

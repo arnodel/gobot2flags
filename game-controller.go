@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 
+	"github.com/arnodel/gobot2flags/engine"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -29,7 +30,7 @@ func (g *gameControlSelector) Bounds() image.Rectangle {
 	return image.Rect(0, 0, 24*len(gameControls), 32)
 }
 
-func (g *gameControlSelector) Draw(c Canvas) {
+func (g *gameControlSelector) Draw(c engine.Canvas) {
 	for i, gc := range gameControls {
 		img := g.icons.Get(gameControlIcons[i])
 		var opts ebiten.DrawImageOptions

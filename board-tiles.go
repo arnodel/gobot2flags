@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 
+	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -48,7 +49,7 @@ func (b *boardTiles) Bounds() image.Rectangle {
 	return image.Rect(0, 0, maxLen*24, 64)
 }
 
-func (b *boardTiles) Draw(c Canvas, chips ChipRenderer) {
+func (b *boardTiles) Draw(c engine.Canvas, chips ChipRenderer) {
 	for i, chipType := range chipTypes1 {
 		img := chips.GetChipImage(chipType)
 		var opts ebiten.DrawImageOptions
