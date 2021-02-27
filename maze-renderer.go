@@ -25,6 +25,12 @@ func (r *MazeRenderer) Floor(x, y int, col Color) ImageToDraw {
 	}
 }
 
+func (r *MazeRenderer) PaintFloor(x, y int, t float64, col Color) ImageToDraw {
+	img := r.Floor(x, y, col)
+	img.Options.ColorM.Scale(1, 1, 1, t)
+	return img
+}
+
 func (r *MazeRenderer) NorthWall(x, y int) ImageToDraw {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x*r.cellWidth), float64(y*r.cellHeight-r.wallHeight))

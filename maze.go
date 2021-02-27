@@ -119,6 +119,9 @@ func (m *Maze) UpdateCellAt(x, y int, c Cell) {
 	} else if cc0.Captured() {
 		m.captured++
 	}
+	if c.Color() != NoColor {
+		*p &= ^(C1 | C2)
+	}
 	*p |= c
 }
 
@@ -330,23 +333,36 @@ func (m *Maze) Draw(c Canvas, r *MazeRenderer, t float64, frame int) {
 	// Draw the robot
 	if robot != nil {
 		stack.Add(r.Robot(robot, t, frame))
+		if col := robot.ColorPainting(); col != NoColor {
+			stack.Add(r.PaintFloor(robot.X, robot.Y, t, col))
+		}
 	}
 
 	stack.Draw(c)
 	stack.Empty() // Reuse the underlying slice, same number of objects each time!
 }
 
-func (m *Maze) AdvanceRobot(com Command) bool {
+func (m *Maze) StopRobot() {
+	*m.robot = m.robot.Stop()
+}
+func (m *Maze) AdvanceRobot() {
 	robot := m.robot.Advance()
 	cell := m.CellAt(robot.X, robot.Y)
 	if cell.Flag() && !cell.Captured() {
 		log.Printf("capture %d %d", robot.X, robot.Y)
 		m.UpdateCellAt(robot.X, robot.Y, KF)
 	}
-	next := robot.ApplyCommand(com)
+	if col := robot.ColorPainting(); col != NoColor {
+		m.UpdateCellAt(robot.X, robot.Y, col.ToCell())
+	}
+	*m.robot = robot
+}
+
+func (m *Maze) CommandRobot(com Command) bool {
+	next := m.robot.ApplyCommand(com)
 	crash := next.IsMovingForward() && m.HasWallAt(next.X, next.Y, next.Orientation)
 	if crash {
-		next = robot.ApplyCommand(NoCommand)
+		next = m.robot.ApplyCommand(NoCommand)
 	}
 	*m.robot = next
 	return !crash

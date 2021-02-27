@@ -167,6 +167,12 @@ func (r Robot) ApplyCommand(com Command) Robot {
 	return r
 }
 
+func (r Robot) Stop() Robot {
+	r.Velocity = Velocity{}
+	r.Rotation = NoRotation
+	return r
+}
+
 func (r Robot) Advance() Robot {
 	r.Position = r.Position.Move(r.Velocity)
 	r.Orientation = r.Orientation.Rotate(r.Rotation)
@@ -175,4 +181,17 @@ func (r Robot) Advance() Robot {
 
 func (r Robot) IsMovingForward() bool {
 	return r.Velocity == r.VelocityForward()
+}
+
+func (r Robot) ColorPainting() Color {
+	switch r.CurrentCommand {
+	case PaintBlue:
+		return Blue
+	case PaintRed:
+		return Red
+	case PaintYellow:
+		return Yellow
+	default:
+		return NoColor
+	}
 }

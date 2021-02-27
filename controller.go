@@ -100,16 +100,19 @@ func (c *BoardController) GameWon() bool {
 }
 
 func (c *BoardController) Advance() {
+	c.maze.AdvanceRobot()
 	if c.GameWon() {
-		log.Printf("Game won!")
+		log.Printf("Level Cleared!")
 		c.board.ClearActiveChips()
+		c.maze.StopRobot()
 		return
 	}
-	c.maze.AdvanceRobot(c.NextCommand())
+	c.maze.CommandRobot(c.NextCommand())
 }
 
 func (c *BoardController) NextCommand() Command {
 	if c.deadEnd {
+		log.Printf("Dead End!!!")
 		return NoCommand
 	}
 	c.board.ClearActiveChips()
@@ -118,7 +121,7 @@ func (c *BoardController) NextCommand() Command {
 		wallAhead  = c.maze.HasWallAt(pos.X, pos.Y, c.robot.Orientation)
 		floorColor = c.maze.CellAt(pos.X, pos.Y).Color()
 	)
-	log.Printf("Robot at %s, facing %s", c.robot.Position, c.robot.Orientation)
+	log.Printf("Robot at %s, facing %s, floor color %s, wall ahead %t", pos, c.robot.Orientation, floorColor, wallAhead)
 	for {
 		var (
 			chip            = c.board.ChipAt(c.boardPos.X, c.boardPos.Y)
@@ -128,8 +131,10 @@ func (c *BoardController) NextCommand() Command {
 		c.board.ActivateChip(c.boardPos.X, c.boardPos.Y, nextChipDir)
 		if ok {
 			c.boardPos = c.boardPos.Move(nextChipDir.VelocityForward())
+			c.deadEnd = com == NoCommand && c.board.ChipAt(c.boardPos.X, c.boardPos.Y).IsActive()
+		} else {
+			c.deadEnd = true
 		}
-		c.deadEnd = c.board.ChipAt(c.boardPos.X, c.boardPos.Y).IsActive()
 		log.Printf("Board -> %s, com: %s", c.boardPos, com)
 		if com != NoCommand || c.deadEnd {
 			return com

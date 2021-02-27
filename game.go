@@ -134,7 +134,11 @@ func (g *Game) updateBoard() {
 			xx, yy := g.boardControlsWindow.Coords(cur)
 			g.chipSelector.Click(xx, yy)
 		} else if g.chipSelector.selectedType == NoChip {
-			return
+			if g.boardWindow.Contains(cur) && g.chipSelector.selectedIcon == TrashCanIcon {
+				g.board.Reset()
+				g.chipSelector.selectedIcon = NoIcon
+				g.chipSelector.selectedType = StartChip
+			}
 		} else if cx, cy, cok := g.slotCoords(cur); cok {
 			newChip := g.board.ChipAt(cx, cy).WithType(g.chipSelector.selectedType)
 			g.board.SetChipAt(cx, cy, newChip)
@@ -202,7 +206,11 @@ func (g *Game) updateMaze() {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
 	g.drawMaze(screen)
-	text.Draw(screen, "robot2flags", msgFont, 10, g.outsideHeight-10, color.White)
+	if g.playing && g.boardController.GameWon() {
+		text.Draw(screen, "You Won!!!", msgFont, 10, g.outsideHeight-10, color.RGBA{0, 255, 0, 255})
+	} else {
+		text.Draw(screen, "gobot2flags", msgFont, 10, g.outsideHeight-10, color.White)
+	}
 }
 
 func (g *Game) drawMaze(screen *ebiten.Image) {

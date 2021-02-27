@@ -126,6 +126,10 @@ func (b *CircuitBoard) chipIndex(x, y int) int {
 	return x + b.width*y
 }
 
+func (b *CircuitBoard) Reset() {
+	*b = *NewCircuitBoard(b.width, b.height)
+}
+
 func (b *CircuitBoard) StartPos() (Position, bool) {
 	return b.startPos, b.hasStartPos
 }
