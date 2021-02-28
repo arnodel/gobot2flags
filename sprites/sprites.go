@@ -27,6 +27,7 @@ const (
 	PauseIcon
 	TrashCanIcon
 	EraserIcon
+	BackIcon
 )
 
 const NoIcon IconType = -1

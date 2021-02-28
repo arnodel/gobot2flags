@@ -11,28 +11,32 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type Game struct {
-	outsideWidth, outsideHeight int
-	count                       int
-	step                        int
-	showBoard                   bool
-	proportion                  float64
-	mazeRenderer                *MazeRenderer
-	maze                        *model.Maze
-	boardRenderer               *CircuitBoardRenderer
-	board                       *model.CircuitBoard
-	chipSelector                *boardTiles
-	boardController             *model.LevelController
-	mazeWindow                  *engine.Window
-	mazeControlsWindow          *engine.Window
-	boardWindow                 *engine.Window
-	boardControlsWindow         *engine.Window
-	gameControlSelector         *gameControlSelector
-	pointer                     *engine.PointerTracker
-	playing                     bool
+type View struct {
+	count               int
+	step                int
+	showBoard           bool
+	proportion          float64
+	mazeRenderer        *MazeRenderer
+	maze                *model.Maze
+	boardRenderer       *CircuitBoardRenderer
+	board               *model.CircuitBoard
+	chipSelector        *boardTiles
+	boardController     *model.LevelController
+	mazeWindow          *engine.Window
+	mazeControlsWindow  *engine.Window
+	boardWindow         *engine.Window
+	boardControlsWindow *engine.Window
+	gameControlSelector *gameControlSelector
+	// pointer             *engine.PointerTracker
+	playing bool
+	exit    func()
 }
 
-func New(maze *model.Maze, board *model.CircuitBoard) *Game {
+var _ engine.View = (*View)(nil)
+
+func New(level *model.Level, exit func()) *View {
+	maze := level.Maze
+	board := model.NewCircuitBoard(level.BoardWidth, level.BoardHeigth)
 	chips := ChipRenderer{sprites.CircuitBoardTiles}
 	boardRenderer := NewCircuitBoardRenderer(chips)
 	mazeRenderer := &MazeRenderer{
@@ -45,7 +49,7 @@ func New(maze *model.Maze, board *model.CircuitBoard) *Game {
 		robot:      sprites.Robot,
 		flag:       sprites.Flag,
 	}
-	return &Game{
+	return &View{
 		maze:            maze,
 		mazeRenderer:    mazeRenderer,
 		board:           board,
@@ -60,40 +64,42 @@ func New(maze *model.Maze, board *model.CircuitBoard) *Game {
 			selectedControl: Rewind,
 			icons:           sprites.PlainIcons,
 		},
-		pointer: &engine.PointerTracker{},
+		// pointer: &engine.PointerTracker{},
+		exit: exit,
 	}
 }
 
-func (g *Game) Update() error {
-	screenRect := image.Rect(0, 0, g.outsideWidth, g.outsideHeight)
+func (v *View) Update(vc engine.ViewContainer) error {
+	outsideWidth, outsideHeight := vc.OutsideSize()
+	screenRect := vc.OutsideRect()
 	var mr, br image.Rectangle
 	var tr, mtr, btr ebiten.GeoM
 	const scale = 2
-	if g.showBoard {
-		g.proportion = math.Max(0, g.proportion-0.1)
+	if v.showBoard {
+		v.proportion = math.Max(0, v.proportion-0.1)
 	} else {
-		g.proportion = math.Min(1, g.proportion+0.1)
+		v.proportion = math.Min(1, v.proportion+0.1)
 	}
-	if g.outsideWidth > g.outsideHeight {
-		mr, br = vSplit(screenRect, int(float64(g.outsideWidth)*(1+g.proportion)/3))
+	if outsideWidth > outsideHeight {
+		mr, br = vSplit(screenRect, int(float64(outsideWidth)*(1+v.proportion)/3))
 	} else {
-		mr, br = hSplit(screenRect, int(float64(g.outsideHeight)*(1+g.proportion)/3))
+		mr, br = hSplit(screenRect, int(float64(outsideHeight)*(1+v.proportion)/3))
 	}
 	tr.Scale(2, 2)
-	btr.Scale(2-g.proportion, 2-g.proportion)
-	mtr.Scale(1+g.proportion, 1+g.proportion)
+	btr.Scale(2-v.proportion, 2-v.proportion)
+	mtr.Scale(1+v.proportion, 1+v.proportion)
 
 	// board
-	br1, br2 := hSplit(br, int(128*(1-g.proportion)))
+	br1, br2 := hSplit(br, int(128*(1-v.proportion)))
 
-	g.boardControlsWindow = engine.CenteredWindow(br1, g.chipSelector.Bounds(), tr)
-	g.boardWindow = engine.CenteredWindow(br2, g.boardRenderer.CircuitBoardBounds(g.board), btr)
+	v.boardControlsWindow = engine.CenteredWindow(br1, v.chipSelector.Bounds(), tr)
+	v.boardWindow = engine.CenteredWindow(br2, v.boardRenderer.CircuitBoardBounds(v.board), btr)
 
 	//gameWon := g.boardController.GameWon()
 
 	// maze
 	var adv int
-	switch g.gameControlSelector.selectedControl {
+	switch v.gameControlSelector.selectedControl {
 	case NoControl:
 		// Paused
 	case Play, Step:
@@ -101,63 +107,66 @@ func (g *Game) Update() error {
 	case Pause:
 		// Paused
 	case FastForward:
-		adv = 5 - g.step%5
+		adv = 5 - v.step%5
 	case Rewind:
-		if g.playing {
-			g.board.ClearActiveChips()
-			g.boardController = nil
-			g.playing = false
-			g.step = 0
+		if v.playing {
+			v.board.ClearActiveChips()
+			v.boardController = nil
+			v.playing = false
+			v.step = 0
 		}
+	case Exit:
+		v.gameControlSelector.selectedControl = NoControl
+		v.exit()
 	}
-	if !g.playing && adv > 0 {
-		boardController := model.NewLevelController(g.board, g.maze.Clone())
+	if !v.playing && adv > 0 {
+		boardController := model.NewLevelController(v.board, v.maze.Clone())
 		if boardController != nil {
-			g.boardController = boardController
-			g.playing = true
+			v.boardController = boardController
+			v.playing = true
 		}
 	}
-	if !g.playing {
-		g.gameControlSelector.selectedControl = Rewind
-	} else if g.gameControlSelector.selectedControl != Pause && g.step%60 == 0 {
-		g.step = 0
-		g.boardController.Advance()
+	if !v.playing {
+		v.gameControlSelector.selectedControl = Rewind
+	} else if v.gameControlSelector.selectedControl != Pause && v.step%60 == 0 {
+		v.step = 0
+		v.boardController.Advance()
 	}
-	if g.playing && adv > 0 {
-		g.count++
-		g.step += adv
-		if g.step == 60 && g.gameControlSelector.selectedControl == Step {
-			g.gameControlSelector.selectedControl = Pause
+	if v.playing && adv > 0 {
+		v.count++
+		v.step += adv
+		if v.step == 60 && v.gameControlSelector.selectedControl == Step {
+			v.gameControlSelector.selectedControl = Pause
 		}
 	}
 
 	mr1, mr2 := hSplit(mr, 64)
 
-	g.mazeControlsWindow = engine.CenteredWindow(mr1, g.gameControlSelector.Bounds(), tr)
-	g.mazeWindow = engine.CenteredWindow(mr2, g.mazeRenderer.MazeBounds(g.maze), mtr)
+	v.mazeControlsWindow = engine.CenteredWindow(mr1, v.gameControlSelector.Bounds(), tr)
+	v.mazeWindow = engine.CenteredWindow(mr2, v.mazeRenderer.MazeBounds(v.maze), mtr)
 
-	g.pointer.Update()
+	pointer := vc.Pointer()
 
-	if g.pointer.Status() == engine.TouchDown {
-		if g.boardWindow.Contains(g.pointer.CurrentPos()) && !g.showBoard {
-			g.showBoard = true
-			g.pointer.CancelTouch()
-		} else if g.mazeWindow.Contains(g.pointer.CurrentPos()) && g.showBoard {
-			g.showBoard = false
-			g.pointer.CancelTouch()
+	if pointer.Status() == engine.TouchDown {
+		if v.boardWindow.Contains(pointer.CurrentPos()) && !v.showBoard {
+			v.showBoard = true
+			pointer.CancelTouch()
+		} else if v.mazeWindow.Contains(pointer.CurrentPos()) && v.showBoard {
+			v.showBoard = false
+			pointer.CancelTouch()
 		}
 	}
 
-	if !g.playing {
-		g.updateBoard()
+	if !v.playing {
+		v.updateBoard(pointer)
 	}
-	g.updateMaze()
+	v.updateMaze(pointer)
 	return nil
 }
 
-func (g *Game) updateBoard() {
-	cur := g.pointer.CurrentPos()
-	switch g.pointer.Status() {
+func (g *View) updateBoard(pointer *engine.PointerTracker) {
+	cur := pointer.CurrentPos()
+	switch pointer.Status() {
 	case engine.TouchDown:
 		if g.boardControlsWindow.Contains(cur) {
 			xx, yy := g.boardControlsWindow.Coords(cur)
@@ -177,7 +186,7 @@ func (g *Game) updateBoard() {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
-		sx, sy, sok := g.slotCoords(g.pointer.StartPos())
+		sx, sy, sok := g.slotCoords(pointer.StartPos())
 		if cok && sok && cx == sx && cy == sy {
 			newChip := g.board.ChipAt(cx, cy).WithType(model.NoChip)
 			g.board.SetChipAt(cx, cy, newChip)
@@ -187,11 +196,11 @@ func (g *Game) updateBoard() {
 			return
 		}
 		cx, cy, cok := g.slotCoords(cur)
-		lx, ly, lok := g.slotCoords(g.pointer.LastPos())
+		lx, ly, lok := g.slotCoords(pointer.LastPos())
 		if cok && lok {
 			o, ok := model.Velocity{Dx: cx - lx, Dy: cy - ly}.Orientation()
 			if ok {
-				g.pointer.AdvanceStartPos() // This is so we don't erase chips by doing loops
+				pointer.AdvanceStartPos() // This is so we don't erase chips by doing loops
 				oldChip := g.board.ChipAt(lx, ly)
 				newChip := oldChip.WithArrow(o, g.chipSelector.selectedArrowType)
 				if g.chipSelector.selectedArrowType == model.ArrowNo && newChip != oldChip {
@@ -209,7 +218,7 @@ func (g *Game) updateBoard() {
 	}
 }
 
-func (g *Game) slotCoords(p image.Point) (int, int, bool) {
+func (g *View) slotCoords(p image.Point) (int, int, bool) {
 	if !g.boardWindow.Contains(p) {
 		return 0, 0, false
 	}
@@ -221,10 +230,10 @@ func (g *Game) slotCoords(p image.Point) (int, int, bool) {
 	return sx, sy, true
 }
 
-func (g *Game) updateMaze() {
-	switch g.pointer.Status() {
+func (g *View) updateMaze(pointer *engine.PointerTracker) {
+	switch pointer.Status() {
 	case engine.TouchDown:
-		cur := g.pointer.CurrentPos()
+		cur := pointer.CurrentPos()
 		if g.mazeControlsWindow.Contains(cur) {
 			xx, yy := g.mazeControlsWindow.Coords(cur)
 			g.gameControlSelector.Click(xx, yy)
@@ -232,17 +241,16 @@ func (g *Game) updateMaze() {
 	}
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
+func (g *View) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
 	g.drawMaze(screen)
+	maxY := screen.Bounds().Max.Y
 	if g.playing && g.boardController.GameWon() {
-		engine.DrawText(screen, "You Won!!!", 10, g.outsideHeight-10, color.RGBA{0, 255, 0, 255})
-	} else {
-		engine.DrawText(screen, "gobot2flags", 10, g.outsideHeight-10, color.White)
+		engine.DrawText(screen, "You Won!!!", 10, maxY-10, color.RGBA{0, 255, 0, 255})
 	}
 }
 
-func (g *Game) drawMaze(screen *ebiten.Image) {
+func (g *View) drawMaze(screen *ebiten.Image) {
 	g.gameControlSelector.Draw(g.mazeControlsWindow.Canvas(screen))
 	maze := g.maze
 	if g.playing {
@@ -251,7 +259,7 @@ func (g *Game) drawMaze(screen *ebiten.Image) {
 	g.mazeRenderer.DrawMaze(g.mazeWindow.Canvas(screen), maze, float64(g.step)/60, g.count/60)
 }
 
-func (g *Game) drawBoard(screen *ebiten.Image) {
+func (g *View) drawBoard(screen *ebiten.Image) {
 	if !g.playing {
 		g.chipSelector.Draw(g.boardControlsWindow.Canvas(screen), g.boardRenderer.chips)
 	}
@@ -274,10 +282,4 @@ func vSplit(r image.Rectangle, x int) (r1 image.Rectangle, r2 image.Rectangle) {
 	r1.Max.X = x
 	r2.Min.X = x
 	return
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	g.outsideWidth = outsideWidth
-	g.outsideHeight = outsideHeight
-	return outsideWidth, outsideHeight
 }

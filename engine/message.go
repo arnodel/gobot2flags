@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"image"
 	"image/color"
 
 	"github.com/arnodel/gobot2flags/resources"
@@ -29,4 +30,11 @@ func init() {
 
 func DrawText(dest *ebiten.Image, txt string, x, y int, clr color.Color) {
 	text.Draw(dest, txt, msgFont, x, y, clr)
+	if debug {
+		drawRect(dest, TextBounds(txt, x, y), color.RGBA{0, 0, 0xff, 0xff})
+	}
+}
+
+func TextBounds(txt string, x, y int) image.Rectangle {
+	return text.BoundString(msgFont, txt).Add(image.Pt(x, y))
 }

@@ -17,10 +17,11 @@ const (
 	Rewind
 	Pause
 	Step
+	Exit
 )
 
-var gameControls = []GameControl{Rewind, Play, Step, Pause, FastForward}
-var gameControlIcons = []sprites.IconType{sprites.RewindIcon, sprites.PlayIcon, sprites.StepIcon, sprites.PauseIcon, sprites.FastForwardIcon}
+var gameControls = []GameControl{Exit, Rewind, Play, Step, Pause, FastForward}
+var gameControlIcons = []sprites.IconType{sprites.BackIcon, sprites.RewindIcon, sprites.PlayIcon, sprites.StepIcon, sprites.PauseIcon, sprites.FastForwardIcon}
 
 type gameControlSelector struct {
 	selectedControl GameControl
