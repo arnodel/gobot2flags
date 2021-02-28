@@ -9,8 +9,7 @@ import (
 )
 
 type View struct {
-	levels []string
-	// pointer       *engine.PointerTracker
+	levels        []string
 	selectedLevel int
 	selectLevel   func(int)
 }
@@ -19,8 +18,7 @@ var _ engine.View = (*View)(nil)
 
 func NewView(levels []string, selectLevel func(int)) *View {
 	return &View{
-		levels: levels,
-		// pointer:       &engine.PointerTracker{},
+		levels:        levels,
 		selectLevel:   selectLevel,
 		selectedLevel: -1,
 	}

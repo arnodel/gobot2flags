@@ -34,7 +34,7 @@ type View struct {
 
 var _ engine.View = (*View)(nil)
 
-func New(level *model.Level, exit func()) *View {
+func NewView(level *model.Level, exit func()) *View {
 	maze := level.Maze
 	board := model.NewCircuitBoard(level.BoardWidth, level.BoardHeigth)
 	chips := ChipRenderer{sprites.CircuitBoardTiles}

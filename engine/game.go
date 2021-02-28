@@ -24,7 +24,7 @@ type Game struct {
 	currentView   View
 	nextView      View
 	mx            sync.Mutex
-	pointer       *PointerTracker
+	pointer       PointerTracker
 }
 
 var _ ebiten.Game = (*Game)(nil)
@@ -33,7 +33,6 @@ var _ ViewContainer = (*Game)(nil)
 func NewGame(initialView View) *Game {
 	return &Game{
 		currentView: initialView,
-		pointer:     &PointerTracker{},
 	}
 }
 
@@ -73,7 +72,7 @@ func (g *Game) OutsideRect() image.Rectangle {
 }
 
 func (g *Game) Pointer() *PointerTracker {
-	return g.pointer
+	return &g.pointer
 }
 
 func (g *Game) SetView(v View) {
