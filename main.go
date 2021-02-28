@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/arnodel/gobot2flags/game"
 	"github.com/arnodel/gobot2flags/model"
+	"github.com/arnodel/gobot2flags/play"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -46,12 +46,12 @@ func main() {
 	// 		log.Fatalf("Could not create circuit board: %s", err)
 	// 	}
 	board := model.NewCircuitBoard(8, 8)
-	theGame := game.New(maze, board)
+	game := play.New(maze, board)
 
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Gobot 2 Flags")
 	ebiten.SetWindowResizable(true)
-	if err := ebiten.RunGame(theGame); err != nil {
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }

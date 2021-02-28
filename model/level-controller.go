@@ -37,7 +37,7 @@ func (c Command) String() string {
 	}
 }
 
-type BoardController struct {
+type LevelController struct {
 	board    *CircuitBoard
 	maze     *Maze
 	robot    *Robot
@@ -45,12 +45,12 @@ type BoardController struct {
 	deadEnd  bool
 }
 
-func NewBoardController(board *CircuitBoard, maze *Maze) *BoardController {
+func NewLevelController(board *CircuitBoard, maze *Maze) *LevelController {
 	startPos, ok := board.StartPos()
 	if !ok {
 		return nil
 	}
-	return &BoardController{
+	return &LevelController{
 		board:    board,
 		maze:     maze,
 		robot:    maze.robot,
@@ -58,15 +58,15 @@ func NewBoardController(board *CircuitBoard, maze *Maze) *BoardController {
 	}
 }
 
-func (c *BoardController) Maze() *Maze {
+func (c *LevelController) Maze() *Maze {
 	return c.maze
 }
 
-func (c *BoardController) GameWon() bool {
+func (c *LevelController) GameWon() bool {
 	return c.maze.FlagsRemaining() == 0
 }
 
-func (c *BoardController) Advance() {
+func (c *LevelController) Advance() {
 	c.maze.AdvanceRobot()
 	if c.GameWon() {
 		log.Printf("Level Cleared!")
@@ -77,7 +77,7 @@ func (c *BoardController) Advance() {
 	c.maze.CommandRobot(c.NextCommand())
 }
 
-func (c *BoardController) NextCommand() Command {
+func (c *LevelController) NextCommand() Command {
 	if c.deadEnd {
 		log.Printf("Dead End!!!")
 		return NoCommand

@@ -1,4 +1,4 @@
-package game
+package play
 
 import (
 	"image"
@@ -22,7 +22,7 @@ type Game struct {
 	boardRenderer               *CircuitBoardRenderer
 	board                       *model.CircuitBoard
 	chipSelector                *boardTiles
-	boardController             *model.BoardController
+	boardController             *model.LevelController
 	mazeWindow                  *engine.Window
 	mazeControlsWindow          *engine.Window
 	boardWindow                 *engine.Window
@@ -50,7 +50,7 @@ func New(maze *model.Maze, board *model.CircuitBoard) *Game {
 		mazeRenderer:    mazeRenderer,
 		board:           board,
 		boardRenderer:   &boardRenderer,
-		boardController: model.NewBoardController(board, maze.Clone()),
+		boardController: model.NewLevelController(board, maze.Clone()),
 		showBoard:       true,
 		chipSelector: &boardTiles{
 			selectedType: model.StartChip,
@@ -111,7 +111,7 @@ func (g *Game) Update() error {
 		}
 	}
 	if !g.playing && adv > 0 {
-		boardController := model.NewBoardController(g.board, g.maze.Clone())
+		boardController := model.NewLevelController(g.board, g.maze.Clone())
 		if boardController != nil {
 			g.boardController = boardController
 			g.playing = true
