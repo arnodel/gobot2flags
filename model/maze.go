@@ -65,6 +65,14 @@ func (c Cell) Captured() bool {
 	return (c & KF) != 0
 }
 
+func (c Cell) SetColor(col Color) Cell {
+	return (c & ^(C1 | C2)) | col.ToCell()
+}
+
+func (c Cell) Capture() Cell {
+	return c | KF
+}
+
 type Maze struct {
 	width, height   int
 	cells           []Cell
@@ -104,6 +112,7 @@ func (m *Maze) cellIndex(x, y int) int {
 	return x + y*m.width
 }
 
+// TODO: remove this no-good function.
 func (m *Maze) UpdateCellAt(x, y int, c Cell) {
 	p := &m.cells[m.cellIndex(x, y)]
 	c0c := *p &^ c
@@ -124,12 +133,26 @@ func (m *Maze) UpdateCellAt(x, y int, c Cell) {
 	*p |= c
 }
 
+func (m *Maze) CaptureFlag(x, y int) {
+	p := &m.cells[m.cellIndex(x, y)]
+	if !p.Flag() || p.Captured() {
+		return
+	}
+	m.captured++
+	*p = p.Capture()
+}
+
+func (m *Maze) PaintCell(x, y int, col Color) {
+	p := &m.cells[m.cellIndex(x, y)]
+	*p = p.SetColor(col)
+}
+
 func (m *Maze) FlagsCaptured() int {
 	return m.captured
 }
 
 func (m *Maze) FlagsRemaining() int {
-	return m.flags
+	return m.flags - m.captured
 }
 
 func (m *Maze) CellAt(x, y int) Cell {
@@ -308,10 +331,10 @@ func (m *Maze) AdvanceRobot() {
 	cell := m.CellAt(robot.X, robot.Y)
 	if cell.Flag() && !cell.Captured() {
 		log.Printf("capture %d %d", robot.X, robot.Y)
-		m.UpdateCellAt(robot.X, robot.Y, KF)
+		m.CaptureFlag(robot.X, robot.Y)
 	}
 	if col := robot.ColorPainting(); col != NoColor {
-		m.UpdateCellAt(robot.X, robot.Y, col.ToCell())
+		m.PaintCell(robot.X, robot.Y, col)
 	}
 	*m.robot = robot
 }
