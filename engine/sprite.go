@@ -33,6 +33,15 @@ func (s Sprite) GetImage(variant, frame int) *ebiten.Image {
 	return s.img.SubImage(rect).(*ebiten.Image)
 }
 
+func (s Sprite) ImageToDraw(variant, frame int) ImageToDraw {
+	opts := ebiten.DrawImageOptions{}
+	s.Anchor(&opts.GeoM)
+	return ImageToDraw{
+		Image:   s.GetImage(variant, frame),
+		Options: &opts,
+	}
+}
+
 func (s Sprite) Rotate(theta float64) ebiten.GeoM {
 	g := ebiten.GeoM{}
 	if theta != 0 {
@@ -46,4 +55,8 @@ func (s Sprite) Rotate(theta float64) ebiten.GeoM {
 
 func (s Sprite) Anchor(g *ebiten.GeoM) {
 	g.Translate(-s.anchorX, -s.anchorY)
+}
+
+func (s Sprite) Bounds() image.Rectangle {
+	return image.Rect(0, 0, s.width, s.height).Sub(pt(s.anchorX, s.anchorY))
 }

@@ -86,6 +86,9 @@ func (i Icons) Get(tp IconType) *ebiten.Image {
 	return i.GetImage(int(tp), 0)
 }
 
+func (i Icons) ImageToDraw(tp IconType) engine.ImageToDraw {
+	return i.Sprite.ImageToDraw(int(tp), 0)
+}
 func subImage(img *ebiten.Image, x, y int) *ebiten.Image {
 	return img.SubImage(image.Rect(x*FrameWidth, y*FrameHeight, (x+1)*FrameWidth, (y+1)*FrameHeight)).(*ebiten.Image)
 }

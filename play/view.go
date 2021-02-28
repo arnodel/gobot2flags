@@ -26,10 +26,10 @@ type View struct {
 	mazeControlsWindow  *engine.Window
 	boardWindow         *engine.Window
 	boardControlsWindow *engine.Window
+	exitWindow          *engine.Window
 	gameControlSelector *gameControlSelector
-	// pointer             *engine.PointerTracker
-	playing bool
-	exit    func()
+	playing             bool
+	exit                func()
 }
 
 var _ engine.View = (*View)(nil)
@@ -64,7 +64,6 @@ func NewView(level *model.Level, exit func()) *View {
 			selectedControl: Rewind,
 			icons:           sprites.PlainIcons,
 		},
-		// pointer: &engine.PointerTracker{},
 		exit: exit,
 	}
 }
@@ -95,8 +94,6 @@ func (v *View) Update(vc engine.ViewContainer) error {
 	v.boardControlsWindow = engine.CenteredWindow(br1, v.chipSelector.Bounds(), tr)
 	v.boardWindow = engine.CenteredWindow(br2, v.boardRenderer.CircuitBoardBounds(v.board), btr)
 
-	//gameWon := g.boardController.GameWon()
-
 	// maze
 	var adv int
 	switch v.gameControlSelector.selectedControl {
@@ -115,9 +112,6 @@ func (v *View) Update(vc engine.ViewContainer) error {
 			v.playing = false
 			v.step = 0
 		}
-	case Exit:
-		v.gameControlSelector.selectedControl = NoControl
-		v.exit()
 	}
 	if !v.playing && adv > 0 {
 		boardController := model.NewLevelController(v.board, v.maze.Clone())
@@ -141,13 +135,18 @@ func (v *View) Update(vc engine.ViewContainer) error {
 	}
 
 	mr1, mr2 := hSplit(mr, 64)
+	mr11, mr12 := vSplit(mr1, 32)
 
-	v.mazeControlsWindow = engine.CenteredWindow(mr1, v.gameControlSelector.Bounds(), tr)
+	v.exitWindow = engine.CenteredWindow(mr11, sprites.PlainIcons.Bounds(), ebiten.GeoM{})
+	v.mazeControlsWindow = engine.CenteredWindow(mr12, v.gameControlSelector.Bounds(), tr)
 	v.mazeWindow = engine.CenteredWindow(mr2, v.mazeRenderer.MazeBounds(v.maze), mtr)
 
 	pointer := vc.Pointer()
 
 	if pointer.Status() == engine.TouchDown {
+		if v.exitWindow.Contains(pointer.CurrentPos()) {
+			v.exit()
+		}
 		if v.boardWindow.Contains(pointer.CurrentPos()) && !v.showBoard {
 			v.showBoard = true
 			pointer.CancelTouch()
@@ -242,6 +241,7 @@ func (g *View) updateMaze(pointer *engine.PointerTracker) {
 }
 
 func (g *View) Draw(screen *ebiten.Image) {
+	g.exitWindow.Canvas(screen).Draw(sprites.PlainIcons.ImageToDraw(sprites.BackIcon))
 	g.drawBoard(screen)
 	g.drawMaze(screen)
 	maxY := screen.Bounds().Max.Y
