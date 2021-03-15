@@ -58,7 +58,6 @@ func NewView(level *model.Level, exit func()) *View {
 		showBoard:       true,
 		chipSelector: &boardTiles{
 			selectedType: model.StartChip,
-			icons:        sprites.PlainIcons,
 		},
 		gameControlSelector: &gameControlSelector{
 			selectedControl: Rewind,
@@ -164,13 +163,11 @@ func (v *View) Update(vc engine.ViewContainer) error {
 }
 
 func (g *View) updateBoard(pointer *engine.PointerTracker) {
+	g.chipSelector.Update(pointer.ForWindow(g.boardControlsWindow))
 	cur := pointer.CurrentPos()
 	switch pointer.Status() {
 	case engine.TouchDown:
-		if g.boardControlsWindow.Contains(cur) {
-			xx, yy := g.boardControlsWindow.Coords(cur)
-			g.chipSelector.Click(xx, yy)
-		} else if g.chipSelector.selectedType == model.NoChip {
+		if g.chipSelector.selectedType == model.NoChip {
 			if g.boardWindow.Contains(cur) && g.chipSelector.selectedIcon == sprites.TrashCanIcon {
 				g.board.Reset()
 				g.chipSelector.selectedIcon = sprites.NoIcon
@@ -230,14 +227,7 @@ func (g *View) slotCoords(p image.Point) (int, int, bool) {
 }
 
 func (g *View) updateMaze(pointer *engine.PointerTracker) {
-	switch pointer.Status() {
-	case engine.TouchDown:
-		cur := pointer.CurrentPos()
-		if g.mazeControlsWindow.Contains(cur) {
-			xx, yy := g.mazeControlsWindow.Coords(cur)
-			g.gameControlSelector.Click(xx, yy)
-		}
-	}
+	g.gameControlSelector.Update(pointer.ForWindow(g.mazeControlsWindow))
 }
 
 func (g *View) Draw(screen *ebiten.Image) {

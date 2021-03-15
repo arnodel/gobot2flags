@@ -24,12 +24,15 @@ var gameControls = []GameControl{Rewind, Play, Step, Pause, FastForward}
 var gameControlIcons = []sprites.IconType{sprites.RewindIcon, sprites.PlayIcon, sprites.StepIcon, sprites.PauseIcon, sprites.FastForwardIcon}
 
 type gameControlSelector struct {
-	selectedControl GameControl
-	icons           sprites.Icons
+	selectedControl  GameControl
+	selectingControl GameControl
+	grid             engine.Grid
+	indexSelector    engine.Selector
+	icons            sprites.Icons
 }
 
 func (g *gameControlSelector) Bounds() image.Rectangle {
-	return image.Rect(0, 0, 24*len(gameControls), 32)
+	return g.grid.Bounds()
 }
 
 func (g *gameControlSelector) Draw(c engine.Canvas) {
@@ -37,17 +40,34 @@ func (g *gameControlSelector) Draw(c engine.Canvas) {
 		img := g.icons.Get(gameControlIcons[i])
 		var opts ebiten.DrawImageOptions
 		g.icons.Anchor(&opts.GeoM)
-		if g.selectedControl != gc {
+		if g.selectedControl != gc && g.selectingControl != gc {
 			opts.GeoM.Scale(0.5, 0.5)
 		}
-		opts.GeoM.Translate((float64(i)+0.5)*24, 16)
+		opts.GeoM.Translate(g.grid.CellCenter(i, 0))
 		c.DrawImage(img, &opts)
 	}
 }
 
-func (g *gameControlSelector) Click(x, y float64) {
-	idx := int(x / 24)
+func (g *gameControlSelector) Update(p engine.PointerStatus) {
+	g.grid = engine.Grid{
+		CellWidth:  24,
+		CellHeight: 32,
+		Rows:       1,
+		Columns:    len(gameControls),
+	}
+
+	idx := g.grid.CellIndex(p.CurrentCoords())
+	var ctrl GameControl
 	if idx >= 0 && idx < len(gameControls) {
-		g.selectedControl = gameControls[idx]
+		ctrl = gameControls[idx]
+	}
+	switch g.indexSelector.Update(idx, p.Status()) {
+	case engine.NotSelecting:
+		g.selectingControl = NoControl
+	case engine.Selecting:
+		g.selectingControl = ctrl
+	case engine.Select:
+		g.selectedControl = ctrl
+		g.selectingControl = NoControl
 	}
 }

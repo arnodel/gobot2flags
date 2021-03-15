@@ -5,6 +5,7 @@ import (
 
 	"github.com/arnodel/gobot2flags/engine"
 	"github.com/arnodel/gobot2flags/model"
+	"github.com/arnodel/gobot2flags/sprites"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -16,8 +17,32 @@ func (r ChipRenderer) GetChipImage(c model.ChipType) *ebiten.Image {
 	return r.GetImage(chipType2imageIdx[c], 0)
 }
 
+func (r ChipRenderer) ChipImageToDraw(c model.ChipType) engine.ImageToDraw {
+	return r.ImageToDraw(chipType2imageIdx[c], 0)
+}
+
 func (r ChipRenderer) GetArrowImage(a model.ArrowType) *ebiten.Image {
 	return r.GetImage(arrowType2ImageIdx[a], 0)
+}
+
+func (r ChipRenderer) ArrowImageToDraw(a model.ArrowType) engine.ImageToDraw {
+	return r.ImageToDraw(arrowType2ImageIdx[a], 0)
+}
+
+var chips ChipRenderer
+
+func init() {
+	chips = ChipRenderer{Sprite: sprites.CircuitBoardTiles}
+
+	for _, chipType := range chipTypes {
+		boardTilesImages = append(boardTilesImages, chips.ChipImageToDraw(chipType))
+	}
+	for _, arrowType := range arrowTypes {
+		boardTilesImages = append(boardTilesImages, chips.ArrowImageToDraw(arrowType))
+	}
+	for _, iconType := range boardIcons {
+		boardTilesImages = append(boardTilesImages, sprites.PlainIcons.ImageToDraw(iconType))
+	}
 }
 
 type CircuitBoardRenderer struct {

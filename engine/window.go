@@ -22,6 +22,7 @@ type Window struct {
 	outerBounds image.Rectangle
 	drawBounds  image.Rectangle
 	tr          ebiten.GeoM
+	inv         ebiten.GeoM
 }
 
 func (w *Window) Center() {
@@ -45,9 +46,7 @@ func (w *Window) Contains(pt image.Point) bool {
 }
 
 func (w *Window) Coords(pt image.Point) (float64, float64) {
-	inv := w.tr
-	inv.Invert()
-	return inv.Apply(fc(pt))
+	return w.inv.Apply(fc(pt))
 }
 
 func CenteredWindow(bounds image.Rectangle, drawBounds image.Rectangle, tr ebiten.GeoM) *Window {
@@ -70,10 +69,16 @@ func CenteredWindow(bounds image.Rectangle, drawBounds image.Rectangle, tr ebite
 	wbounds := image.Rectangle{Min: bounds.Min.Add(diff), Max: bounds.Max.Sub(diff)}
 	translateVec := wbounds.Min.Sub(scaledDrawBounds.Min)
 	tr.Translate(fc(translateVec))
+	var inv ebiten.GeoM
+	if tr.IsInvertible() {
+		inv = tr
+		inv.Invert()
+	}
 	return &Window{
 		outerBounds: bounds,
 		drawBounds:  wbounds,
 		tr:          tr,
+		inv:         inv,
 	}
 }
 

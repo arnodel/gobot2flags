@@ -6,10 +6,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type PointerStatus int
+type TouchStatus int
 
 const (
-	NoTouch PointerStatus = iota
+	NoTouch TouchStatus = iota
 	TouchDown
 	Dragging
 	TouchUp
@@ -19,34 +19,52 @@ type PointerTracker struct {
 	startPos    image.Point
 	lastPos     image.Point
 	currentPos  image.Point
-	status      PointerStatus
+	status      TouchStatus
 	frames      int
 	cancelTouch bool
 }
 
 func (p *PointerTracker) CancelTouch() {
+	if p == nil {
+		return
+	}
 	p.cancelTouch = true
 	p.status = NoTouch
 }
 
-func (p *PointerTracker) Status() PointerStatus {
+func (p *PointerTracker) Status() TouchStatus {
+	if p == nil {
+		return NoTouch
+	}
 	return p.status
 }
 
 func (p *PointerTracker) CurrentPos() image.Point {
+	if p == nil {
+		return image.Point{}
+	}
 	return p.currentPos
 }
 
 func (p *PointerTracker) LastPos() image.Point {
+	if p == nil {
+		return image.Point{}
+	}
 	return p.lastPos
 }
 
 func (p *PointerTracker) StartPos() image.Point {
+	if p == nil {
+		return image.Point{}
+	}
 	return p.startPos
 }
 
 // TODO: perhaps remove necessity for this method?
 func (p *PointerTracker) AdvanceStartPos() {
+	if p == nil {
+		return
+	}
 	p.startPos = p.lastPos
 }
 
@@ -94,4 +112,51 @@ func (p *PointerTracker) Update() {
 	}
 	p.currentPos = currentPos
 	return
+}
+
+func (p *PointerTracker) ForWindow(w *Window) PointerStatus {
+	if !w.Contains(p.currentPos) {
+		return PointerStatus{}
+	}
+	return PointerStatus{
+		tracker: p,
+		tr:      w.inv,
+	}
+}
+
+type PointerStatus struct {
+	tracker *PointerTracker
+	tr      ebiten.GeoM
+}
+
+func (s PointerStatus) HasPointer() bool {
+	return s.tracker != nil
+}
+
+func (s PointerStatus) Status() TouchStatus {
+	return s.tracker.Status()
+}
+
+func (s PointerStatus) CurrentCoords() (float64, float64) {
+	return s.coords(s.tracker.CurrentPos())
+}
+
+func (s PointerStatus) LastCoords() (float64, float64) {
+	return s.coords(s.tracker.LastPos())
+}
+
+func (s PointerStatus) StartCoords() (float64, float64) {
+	return s.coords(s.tracker.StartPos())
+}
+
+func (s PointerStatus) CancelTouch() {
+	s.tracker.CancelTouch()
+}
+
+func (s PointerStatus) AdvanceStartPos() {
+	s.tracker.AdvanceStartPos()
+}
+
+func (s PointerStatus) coords(pt image.Point) (float64, float64) {
+	return s.tr.Apply(fc(pt))
 }
