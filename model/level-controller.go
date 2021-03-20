@@ -38,23 +38,28 @@ func (c Command) String() string {
 }
 
 type LevelController struct {
+	level    *Level
 	board    *CircuitBoard
 	maze     *Maze
 	robot    *Robot
 	boardPos Position
+	score    int
 	deadEnd  bool
 }
 
-func NewLevelController(board *CircuitBoard, maze *Maze) *LevelController {
+func NewLevelController(level *Level, board *CircuitBoard) *LevelController {
 	startPos, ok := board.StartPos()
 	if !ok {
 		return nil
 	}
+	maze := level.Maze.Clone()
 	return &LevelController{
+		level:    level,
 		board:    board,
 		maze:     maze,
 		robot:    maze.robot,
 		boardPos: startPos,
+		score:    level.ChipCost * board.ChipCount(),
 	}
 }
 
@@ -64,6 +69,10 @@ func (c *LevelController) Maze() *Maze {
 
 func (c *LevelController) GameWon() bool {
 	return c.maze.FlagsRemaining() == 0
+}
+
+func (c *LevelController) Score() int {
+	return c.score
 }
 
 func (c *LevelController) Advance() {
@@ -103,7 +112,11 @@ func (c *LevelController) NextCommand() Command {
 			c.deadEnd = true
 		}
 		log.Printf("Board -> %s, com: %s", c.boardPos, com)
-		if com != NoCommand || c.deadEnd {
+		if c.deadEnd {
+			return NoCommand
+		}
+		if com != NoCommand {
+			c.score += c.level.MoveCost
 			return com
 		}
 	}

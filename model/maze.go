@@ -37,6 +37,21 @@ const (
 	Blue
 )
 
+func (c Color) String() string {
+	switch c {
+	case NoColor:
+		return "no color"
+	case Red:
+		return "red"
+	case Yellow:
+		return "yellow"
+	case Blue:
+		return "blue"
+	default:
+		return "unknown color"
+	}
+}
+
 func (c Color) ToCell() Cell {
 	return Cell(c << C1Pos)
 }

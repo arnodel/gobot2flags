@@ -125,6 +125,18 @@ func (b *CircuitBoard) Size() (int, int) {
 	return b.width, b.height
 }
 
+func (b *CircuitBoard) ChipCount() int {
+	c := 0
+	for _, chip := range b.chips {
+		switch chip.Type() {
+		case NoChip, StartChip:
+		default:
+			c++
+		}
+	}
+	return c
+}
+
 func (b *CircuitBoard) Reset() {
 	*b = *NewCircuitBoard(b.width, b.height)
 }

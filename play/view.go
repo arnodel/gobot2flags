@@ -1,6 +1,7 @@
 package play
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"math"
@@ -16,8 +17,8 @@ type View struct {
 	step                int
 	showBoard           bool
 	proportion          float64
+	level               *model.Level
 	mazeRenderer        *MazeRenderer
-	maze                *model.Maze
 	boardRenderer       *CircuitBoardRenderer
 	board               *model.CircuitBoard
 	chipSelector        *boardTiles
@@ -35,7 +36,6 @@ type View struct {
 var _ engine.View = (*View)(nil)
 
 func NewView(level *model.Level, exit func()) *View {
-	maze := level.Maze
 	board := model.NewCircuitBoard(level.BoardWidth, level.BoardHeigth)
 	chips := ChipRenderer{sprites.CircuitBoardTiles}
 	boardRenderer := NewCircuitBoardRenderer(chips)
@@ -50,11 +50,11 @@ func NewView(level *model.Level, exit func()) *View {
 		flag:       sprites.Flag,
 	}
 	return &View{
-		maze:            maze,
+		level:           level,
 		mazeRenderer:    mazeRenderer,
 		board:           board,
 		boardRenderer:   &boardRenderer,
-		boardController: model.NewLevelController(board, maze.Clone()),
+		boardController: model.NewLevelController(level, board),
 		showBoard:       true,
 		chipSelector: &boardTiles{
 			selectedType: model.StartChip,
@@ -113,7 +113,7 @@ func (v *View) Update(vc engine.ViewContainer) error {
 		}
 	}
 	if !v.playing && adv > 0 {
-		boardController := model.NewLevelController(v.board, v.maze.Clone())
+		boardController := model.NewLevelController(v.level, v.board)
 		if boardController != nil {
 			v.boardController = boardController
 			v.playing = true
@@ -138,7 +138,7 @@ func (v *View) Update(vc engine.ViewContainer) error {
 
 	v.exitWindow = engine.CenteredWindow(mr11, sprites.PlainIcons.Bounds(), ebiten.GeoM{})
 	v.mazeControlsWindow = engine.CenteredWindow(mr12, v.gameControlSelector.Bounds(), tr)
-	v.mazeWindow = engine.CenteredWindow(mr2, v.mazeRenderer.MazeBounds(v.maze), mtr)
+	v.mazeWindow = engine.CenteredWindow(mr2, v.mazeRenderer.MazeBounds(v.level.Maze), mtr)
 
 	pointer := vc.Pointer()
 
@@ -235,14 +235,26 @@ func (g *View) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
 	g.drawMaze(screen)
 	maxY := screen.Bounds().Max.Y
-	if g.playing && g.boardController.GameWon() {
-		engine.DrawText(screen, "You Won!!!", 10, maxY-10, color.RGBA{0, 255, 0, 255})
+	var msg string
+	var col color.Color
+	if g.playing {
+		col = color.RGBA{0, 255, 0, 255}
+		if g.boardController.GameWon() {
+			msg = fmt.Sprintf("Level complete! You spent $%d", g.boardController.Score())
+		} else {
+			msg = fmt.Sprintf("Cost $%d", g.boardController.Score())
+		}
+
+	} else {
+		msg = fmt.Sprintf("Chip $%d - Move $%d", g.level.ChipCost, g.level.MoveCost)
+		col = color.White
 	}
+	engine.DrawText(screen, msg, 10, maxY-10, col)
 }
 
 func (g *View) drawMaze(screen *ebiten.Image) {
 	g.gameControlSelector.Draw(g.mazeControlsWindow.Canvas(screen))
-	maze := g.maze
+	maze := g.level.Maze
 	if g.playing {
 		maze = g.boardController.Maze()
 	}
